@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { ScrollView, StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import AddUser from './admin/AddUser';
+import AddProductCategory from './admin/AddProductCategory';
 
 
 function App(): React.JSX.Element {
@@ -33,7 +33,7 @@ function App(): React.JSX.Element {
             flex: 1,
             justifyContent: 'center',
           }}>
-          <AddUser />
+          <AddProductCategory />
         </View>
       </ScrollView>
     </View>

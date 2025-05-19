@@ -219,6 +219,51 @@ app.get('/users', async (req, res) => {
   }
 });
 
+// Thêm danh mục sản phẩm mới
+app.post('/product-categories', async (req, res) => {
+  const { code, name, description, is_active } = req.body;
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    await client.query(
+      `INSERT INTO product_categories (code, name, description, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      [code, name, description, is_active]
+    );
+    await client.end();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách danh mục sản phẩm
+app.get('/product-categories', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM product_categories');
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`);
 });
