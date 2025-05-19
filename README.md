@@ -8,8 +8,8 @@
 ## 🧾 Nhật ký phát triển
 
 ### 📅 Ngày 18/05/2025
-- [x] Xây dựng chức năng **Đăng nhập**
-- [x] Load **danh sách sản phẩm**
+- [ ] Xây dựng chức năng **Đăng nhập**
+- [ ] Load **danh sách sản phẩm**
 
 ---
 
