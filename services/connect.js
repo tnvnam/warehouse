@@ -3,9 +3,9 @@
 // const client = new Client({
 //   host: 'localhost',
 //   port: 5432,
-//   database: 'warehouse',
+//   database: 'warehouse_v2',
 //   user: 'postgres',
-//   password: '514753',
+//   password: '12345',
 //   ssl: false
 // });
 
@@ -34,7 +34,6 @@ async function hashPassword(password) {
 function hashPasswordSHA256(password) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.createHmac('sha256', salt).update(password).digest('hex');
-  // Lưu salt cùng với hash để sau này kiểm tra đăng nhập
   return `${salt}:${hash}`;
 }
 
@@ -43,9 +42,9 @@ app.get('/test-db', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -64,9 +63,9 @@ app.post('/roles', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -87,9 +86,9 @@ app.get('/roles', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -108,9 +107,9 @@ app.post('/departments', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -131,9 +130,9 @@ app.get('/departments', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -159,13 +158,11 @@ app.post('/users', async (req, res) => {
     is_active
   } = req.body;
 
-  // Kiểm tra định dạng email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (email && !emailRegex.test(email)) {
     return res.status(400).json({ success: false, error: 'Email không đúng định dạng.' });
   }
 
-  // Kiểm tra số điện thoại 10 số
   const phoneRegex = /^\d{10}$/;
   if (phone && !phoneRegex.test(phone)) {
     return res.status(400).json({ success: false, error: 'Số điện thoại phải gồm đúng 10 chữ số.' });
@@ -174,16 +171,13 @@ app.post('/users', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
-    console.log('Password:', password);
     const hashedPassword = await hashPassword(password);
-    console.log('Hashed:', hashedPassword);
-
     await client.connect();
     await client.query(
       `INSERT INTO users 
@@ -194,7 +188,6 @@ app.post('/users', async (req, res) => {
     await client.end();
     res.json({ success: true });
   } catch (err) {
-    console.error('Lỗi thêm user:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -204,9 +197,9 @@ app.get('/users', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -225,9 +218,9 @@ app.post('/product-categories', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -249,9 +242,9 @@ app.get('/product-categories', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -270,9 +263,9 @@ app.post('/units', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -293,9 +286,9 @@ app.get('/units', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -307,7 +300,6 @@ app.get('/units', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // Thêm nhà cung cấp mới
 app.post('/suppliers', async (req, res) => {
   const {
@@ -330,9 +322,9 @@ app.post('/suppliers', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
 
@@ -362,9 +354,9 @@ app.get('/suppliers', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -401,9 +393,9 @@ app.post('/products', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
 
@@ -433,9 +425,9 @@ app.get('/products', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -462,9 +454,9 @@ app.post('/unit-conversions', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
 
@@ -490,9 +482,9 @@ app.get('/unit-conversions', async (req, res) => {
   const client = new Client({
     host: 'localhost',
     port: 5432,
-    database: 'warehouse',
+    database: 'warehouse_v2',
     user: 'postgres',
-    password: '514753',
+    password: '12345',
     ssl: false
   });
   try {
@@ -505,6 +497,65 @@ app.get('/unit-conversions', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`API server listening at http://localhost:${port}`);
+// Khởi động server
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server is running on http://0.0.0.0:${port}`);
+});
+
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  console.log('🟡 Nhận yêu cầu đăng nhập:', { username });
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse_v2',
+    user: 'postgres',
+    password: '12345',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+
+    const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+
+    if (result.rows.length === 0) {
+      console.log('❌ Không tìm thấy người dùng');
+      await client.end();
+      return res.status(401).json({ success: false, error: 'Tài khoản không tồn tại' });
+    }
+
+    const user = result.rows[0];
+
+    console.log('🔐 Đang kiểm tra mật khẩu...');
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      console.log('❌ Mật khẩu sai');
+      await client.end();
+      return res.status(401).json({ success: false, error: 'Sai mật khẩu' });
+    }
+
+    // Tạo object user trả về, KHÔNG trả về mật khẩu
+    const userData = {
+      id: user.id,
+      username: user.username,
+      full_name: user.full_name,
+      email: user.email,
+      phone: user.phone,
+      department_id: user.department_id,
+      role_id: user.role_id,
+      is_active: user.is_active
+    };
+
+    console.log('✅ Đăng nhập thành công:', userData.username);
+    await client.end();
+
+    res.json({ success: true, message: 'Đăng nhập thành công', user: userData });
+  } catch (err) {
+    console.error('🔥 Lỗi đăng nhập:', err);
+    res.status(500).json({ success: false, error: 'Lỗi máy chủ. Vui lòng thử lại sau.' });
+  }
 });
