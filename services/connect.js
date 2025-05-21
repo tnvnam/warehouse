@@ -505,6 +505,392 @@ app.get('/unit-conversions', async (req, res) => {
   }
 });
 
+// Thêm khách hàng mới
+app.post('/customers', async (req, res) => {
+  const {
+    tax_code,
+    company_name,
+    address,
+    phone,
+    email,
+    contact_person,
+    contact_position,
+    created_by,
+    updated_by,
+    business_field,
+    note,
+    scale,
+    status,
+    credit_limit,
+    priority_level,
+    is_active
+  } = req.body;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query(
+      `INSERT INTO customers (
+        tax_code, company_name, address, phone, email, contact_person, contact_position,
+        created_by, updated_by, business_field, note, scale, status, credit_limit, priority_level, is_active, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )`,
+      [
+        tax_code, company_name, address, phone, email, contact_person, contact_position,
+        created_by, updated_by, business_field, note, scale, status, credit_limit, priority_level, is_active
+      ]
+    );
+    await client.end();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách khách hàng
+app.get('/customers', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM customers');
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Thêm kho mới
+app.post('/warehouses', async (req, res) => {
+  const {
+    code,
+    name,
+    parent_id,
+    address,
+    manager_id,
+    note,
+    is_active,
+    created_by // nếu muốn lưu người tạo, có thể thêm trường này vào bảng
+  } = req.body;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query(
+      `INSERT INTO warehouses (
+        code, name, parent_id, address, manager_id, note, is_active, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )`,
+      [code, name, parent_id || null, address, manager_id, note, is_active]
+    );
+    await client.end();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách kho
+app.get('/warehouses', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM warehouses');
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Thêm nguyên vật liệu mới
+app.post('/materials', async (req, res) => {
+  const {
+    code,
+    name,
+    specification,
+    category_id,
+    unit_id,
+    brand,
+    origin,
+    supplier_id,
+    attributes,
+    image_urls,
+    stock_min,
+    stock_max,
+    note,
+    is_active
+  } = req.body;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query(
+      `INSERT INTO materials (
+        code, name, specification, category_id, unit_id, brand, origin, supplier_id,
+        attributes, image_urls, stock_min, stock_max, note, is_active, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )`,
+      [
+        code, name, specification, category_id, unit_id, brand, origin, supplier_id,
+        attributes, image_urls, stock_min, stock_max, note, is_active
+      ]
+    );
+    await client.end();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách nguyên vật liệu
+app.get('/materials', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM materials');
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Thêm lệnh sản xuất mới
+app.post('/production-orders', async (req, res) => {
+  const {
+    order_code,
+    product_id,
+    planned_quantity,
+    actual_quantity,
+    start_date,
+    end_date,
+    requester_id,
+    approver_id,
+    status,
+    priority,
+    note,
+    is_active
+  } = req.body;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query(
+      `INSERT INTO production_orders (
+        order_code, product_id, planned_quantity, actual_quantity, start_date, end_date,
+        requester_id, approver_id, status, priority, note, is_active, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )`,
+      [
+        order_code, product_id, planned_quantity, actual_quantity || null, start_date || null, end_date || null,
+        requester_id, approver_id, status, priority, note, is_active
+      ]
+    );
+    await client.end();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách lệnh sản xuất
+app.get('/production-orders', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM production_orders');
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Thêm yêu cầu nguyên vật liệu mới
+app.post('/material-requests', async (req, res) => {
+  const {
+    request_code,
+    production_order_id,
+    requester_id,
+    request_date,
+    status,
+    note,
+    is_active
+  } = req.body;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query(
+      `INSERT INTO material_requests (
+        request_code, production_order_id, requester_id, request_date, status, note, is_active, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )`,
+      [
+        request_code, production_order_id, requester_id, request_date, status, note, is_active
+      ]
+    );
+    await client.end();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách yêu cầu nguyên vật liệu
+app.get('/material-requests', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM material_requests');
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Thêm chi tiết yêu cầu nguyên vật liệu
+app.post('/material-request-items', async (req, res) => {
+  const {
+    material_request_id,
+    material_id,
+    material_name,
+    specification,
+    quantity,
+    unit_id,
+    note
+  } = req.body;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query(
+      `INSERT INTO material_request_items (
+        material_request_id, material_id, material_name, specification, quantity, unit_id, note, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      )`,
+      [
+        material_request_id, material_id, material_name, specification, quantity, unit_id, note
+      ]
+    );
+    await client.end();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Lấy danh sách chi tiết yêu cầu nguyên vật liệu
+app.get('/material-request-items', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM material_request_items');
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(port, () => {
   console.log(`API server listening at http://localhost:${port}`);
 });
