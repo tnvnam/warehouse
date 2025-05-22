@@ -1010,26 +1010,34 @@ app.get('/requests', async (req, res) => {
     database: 'warehouse',
     user: 'postgres',
     password: '12345',
-    ssl: false,
   });
 
   try {
     await client.connect();
 
     const result = await client.query(`
-      SELECT r.*, d.name AS department_name
+      SELECT 
+        r.id,
+        r.type,
+        r.status,
+        d.name AS department_name,
+        r.date,
+        u.name AS unit
       FROM requests r
-      LEFT JOIN departments d ON r.department_id = d.id
+      JOIN departments d ON r.department_id = d.id
+      JOIN materials m ON r.material_id = m.id
+      JOIN units u ON m.unit_id = u.id
       ORDER BY r.date DESC
     `);
 
     await client.end();
     res.json(result.rows);
   } catch (err) {
-    console.error('Lỗi lấy danh sách yêu cầu:', err);
-    res.status(500).json({ error: 'Không thể tải danh sách yêu cầu' });
+    console.error('Lỗi lấy danh sách requests:', err);
+    res.status(500).json({ error: 'Không thể tải danh sách phiếu' });
   }
 });
+
 
 app.get('/inventory', async (req, res) => {
   const client = new Client({
@@ -1132,6 +1140,7 @@ app.get('/stock/movement', async (req, res) => {
     database: 'warehouse',
     user: 'postgres',
     password: '12345',
+    ssl: false,
   });
 
   try {
@@ -1143,29 +1152,126 @@ app.get('/stock/movement', async (req, res) => {
         r.type,
         m.name AS product_name,
         w.name AS warehouse_name,
+        u.name AS unit,
+        us.full_name AS handler_name,
         r.quantity,
+        r.price,
+        r.batch_number,
+        r.note,
+        r.expiry_date,
         r.date
       FROM requests r
       JOIN materials m ON r.material_id = m.id
       JOIN warehouses w ON r.warehouse_id = w.id
+      LEFT JOIN units u ON r.unit_id = u.id
+      LEFT JOIN users us ON r.handler_id = us.id
       WHERE r.status = 'approved'
-      ORDER BY r.date DESC
+      ORDER BY r.date DESC;
     `);
 
-    await client.end();
     res.json(result.rows);
   } catch (err) {
-    console.error('Lỗi stock/movement:', err);
-    res.status(500).json({ error: 'Không thể tải dữ liệu xuất/nhập kho' });
+    console.error('Error fetching movements:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    await client.end();
   }
 });
+
 
 module.exports = app;
 
 app.post('/stock/create', async (req, res) => {
-  const { material_id, warehouse_id, type, quantity, date } = req.body;
+  const {
+    material_id,
+    warehouse_id,
+    unit_id,
+    handler_id,
+    quantity,
+    price,
+    note,
+    batch_number,
+    expiry_date,
+    date,
+    type
+  } = req.body;
 
-  if (!material_id || !warehouse_id || !type || !quantity || !date) {
+  if (!material_id || !warehouse_id || !unit_id || !quantity || !date || !type) {
+    return res.status(400).json({ error: 'Thiếu dữ liệu bắt buộc' });
+  }
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '12345',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+
+    await client.query(
+      `INSERT INTO requests (
+        id, material_id, warehouse_id, unit_id, handler_id, type, quantity,
+        price, note, batch_number, expiry_date, date, status, created_at
+      )
+      VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10, $11, 'approved', NOW()
+      )`,
+      [
+        material_id,
+        warehouse_id,
+        unit_id,
+        handler_id,
+        type,
+        quantity,
+        price || null,
+        note || null,
+        batch_number || null,
+        expiry_date || null,
+        date
+      ]
+    );
+
+    await client.end();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Lỗi tạo phiếu:', error);
+    res.status(500).json({ error: 'Không thể tạo phiếu' });
+  }
+});
+
+
+app.delete('/stock/delete/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '12345',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query('DELETE FROM requests WHERE id = $1', [id]);
+    await client.end();
+    res.sendStatus(204);
+  } catch (err) {
+    console.error('Lỗi xóa phiếu:', err);
+    res.status(500).json({ error: 'Không thể xóa phiếu' });
+  }
+});
+
+app.post('/requests/create', async (req, res) => {
+  const { department_id, material_id, unit_id, type, quantity, date } = req.body;
+
+  if (!department_id || !material_id || !unit_id || !type || !quantity || !date) {
     return res.status(400).json({ error: 'Thiếu dữ liệu' });
   }
 
@@ -1182,24 +1288,175 @@ app.post('/stock/create', async (req, res) => {
     await client.connect();
 
     await client.query(
-      `INSERT INTO requests (id, material_id, warehouse_id, type, quantity, date, status, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, 'approved', NOW())`,
-      [material_id, warehouse_id, type, quantity, date]
+      `INSERT INTO requests (id, department_id, material_id, unit_id, type, quantity, date, status, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, 'pending', NOW())`,
+      [department_id, material_id, unit_id, type, quantity, date]
     );
 
     await client.end();
     res.json({ success: true });
+  } catch (err) {
+    console.error('Lỗi tạo yêu cầu:', err);
+    res.status(500).json({ error: 'Không thể tạo yêu cầu' });
+  }
+});
+
+
+app.get('/requests/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '12345',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+
+    const result = await client.query(`
+      SELECT 
+        r.id, r.type, r.status, r.date, r.quantity,
+        d.name AS department_name,
+        m.name AS material_name,
+        u.name AS unit
+      FROM requests r
+      JOIN departments d ON r.department_id = d.id
+      JOIN materials m ON r.material_id = m.id
+      JOIN units u ON r.unit_id = u.id
+      WHERE r.id = $1
+    `, [id]);
+
+    await client.end();
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy yêu cầu' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Lỗi lấy yêu cầu:', err);
+    res.status(500).json({ error: 'Không thể lấy yêu cầu' });
+  }
+});
+
+app.get('/requests/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT r.*, 
+        m.name AS material_name, 
+        u.name AS unit_name,
+        w.name AS warehouse_name,
+        d.name AS department_name
+       FROM requests r
+       LEFT JOIN materials m ON r.material_id = m.id
+       LEFT JOIN units u ON r.unit_id = u.id
+       LEFT JOIN warehouses w ON r.warehouse_id = w.id
+       LEFT JOIN departments d ON r.department_id = d.id
+       WHERE r.id = $1`,
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy yêu cầu' });
+    }
+
+    res.json(rows[0]);
   } catch (error) {
-    console.error('Lỗi tạo phiếu:', error);
-    res.status(500).json({ error: 'Không thể tạo phiếu' });
+    console.error('Lỗi chi tiết yêu cầu:', error);
+    res.status(500).json({ error: 'Không thể lấy chi tiết yêu cầu' });
   }
 });
 
 
 
+app.put('/requests/update/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!['approved', 'rejected'].includes(status)) {
+    return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
+  }
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '12345',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    await client.query(`UPDATE requests SET status = $1 WHERE id = $2`, [status, id]);
+    await client.end();
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Lỗi cập nhật yêu cầu:', err);
+    res.status(500).json({ error: 'Không thể cập nhật yêu cầu' });
+  }
+});
+
+
+app.get('/requests/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '12345',
+    ssl: false,
+  });
+
+  try {
+    await client.connect();
+
+    const result = await client.query(`
+      SELECT 
+        r.id,
+        r.type,
+        r.status,
+        r.date,
+        r.quantity,
+        d.name AS department_name,
+        m.name AS material_name,
+        u.name AS unit_name,
+        w.name AS warehouse_name
+      FROM requests r
+      LEFT JOIN departments d ON r.department_id = d.id
+      LEFT JOIN materials m ON r.material_id = m.id
+      LEFT JOIN units u ON r.unit_id = u.id
+      LEFT JOIN warehouses w ON r.warehouse_id = w.id
+      WHERE r.id = $1
+    `, [id]);
+
+    await client.end();
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy yêu cầu' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('🔥 Lỗi khi lấy chi tiết yêu cầu:', err);
+    res.status(500).json({ error: 'Không thể lấy chi tiết yêu cầu' });
+  }
+});
+
+
 // app.listen(port, () => {
 //   console.log(`API server listening at http://localhost:${port}`);
 // });
+
 
 // Khởi động server
 app.listen(port, '0.0.0.0', () => {

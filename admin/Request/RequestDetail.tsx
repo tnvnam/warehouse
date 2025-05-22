@@ -5,142 +5,91 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
+  Button,
+  ScrollView,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../AppNavigator'; // Đảm bảo đường dẫn đúng
 
-interface RequestDetailData {
-  id: string;
-  type: 'import' | 'export';
-  status: 'pending' | 'approved' | 'rejected';
-  department_name: string;
-  date: string;
-  items: {
-    material_name: string;
-    quantity: number;
-    unit_name: string;
-  }[];
-}
+type RequestDetailNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'RequestDetail'
+>;
 
 const RequestDetail = () => {
-  const [request, setRequest] = useState<RequestDetailData | null>(null);
-  const [loading, setLoading] = useState(true);
   const route = useRoute();
-  const navigation = useNavigation();
-  const { id }: any = route.params;
+  const navigation = useNavigation<RequestDetailNavigationProp>();
+  const { id } = route.params as { id: string };
 
-  const fetchDetail = async () => {
+  const [request, setRequest] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRequest = async () => {
     try {
       const res = await fetch(`http://10.0.2.2:3000/requests/${id}`);
+      if (!res.ok) throw new Error('Not found');
       const data = await res.json();
       setRequest(data);
-    } catch {
-      Alert.alert('Lỗi', 'Không thể tải chi tiết phiếu yêu cầu');
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể tải chi tiết yêu cầu');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async () => {
+  const handleUpdateStatus = async (status: 'approved' | 'rejected') => {
     try {
-      const res = await fetch(`http://10.0.2.2:3000/requests/${id}/approve`, { method: 'PUT' });
-      if (res.ok) {
-        Alert.alert('Thành công', 'Đã duyệt phiếu');
-        navigation.goBack();
-      } else {
-        Alert.alert('Lỗi', 'Không thể duyệt');
-      }
-    } catch {
-      Alert.alert('Lỗi', 'Không thể kết nối server');
-    }
-  };
+      const res = await fetch(`http://10.0.2.2:3000/requests/update/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
 
-  const handleReject = async () => {
-    try {
-      const res = await fetch(`http://10.0.2.2:3000/requests/${id}/reject`, { method: 'PUT' });
-      if (res.ok) {
-        Alert.alert('Đã từ chối phiếu');
-        navigation.goBack();
-      } else {
-        Alert.alert('Lỗi', 'Không thể từ chối');
-      }
-    } catch {
-      Alert.alert('Lỗi', 'Không thể kết nối server');
+      if (!res.ok) throw new Error();
+      Alert.alert('Thành công', `Yêu cầu đã được ${status === 'approved' ? 'duyệt' : 'từ chối'}`);
+      navigation.navigate('ApproveRequestList');
+    } catch (err) {
+      Alert.alert('Lỗi', 'Không thể cập nhật trạng thái yêu cầu');
     }
   };
 
   useEffect(() => {
-    fetchDetail();
+    fetchRequest();
   }, []);
 
-  if (loading || !request) return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
+  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
+  if (!request) return <Text style={styles.error}>Không tìm thấy yêu cầu</Text>;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Chi tiết phiếu {request.type === 'import' ? 'nhập' : 'xuất'}</Text>
-      <Text style={styles.label}>Phòng ban: {request.department_name}</Text>
-      <Text style={styles.label}>Ngày yêu cầu: {request.date}</Text>
-      <Text style={styles.label}>Trạng thái: {request.status}</Text>
-      <Text style={styles.subHeader}>Danh sách vật tư</Text>
-
-      {request.items.map((item, index) => (
-        <View key={index} style={styles.item}>
-          <Text style={styles.itemText}>{item.material_name}</Text>
-          <Text style={styles.itemText}>SL: {item.quantity} {item.unit_name}</Text>
-        </View>
-      ))}
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>📄 Chi tiết phiếu yêu cầu</Text>
+      <Text style={styles.item}>Loại: {request.type === 'import' ? 'Nhập kho' : 'Xuất kho'}</Text>
+      <Text style={styles.item}>Phòng ban: {request.department_name || 'Không rõ'}</Text>
+      <Text style={styles.item}>Nguyên vật liệu: {request.material_name || 'Không rõ'}</Text>
+      <Text style={styles.item}>Kho: {request.warehouse_name || 'Không có'}</Text>
+      <Text style={styles.item}>Đơn vị: {request.unit_name || 'Không rõ'}</Text>
+      <Text style={styles.item}>Số lượng: {parseFloat(request.quantity).toFixed(2)}</Text>
+      <Text style={styles.item}>Ngày: {request.date}</Text>
+      <Text style={styles.item}>Trạng thái: {request.status}</Text>
 
       {request.status === 'pending' && (
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.approveBtn} onPress={handleApprove}>
-            <Ionicons name="checkmark" size={20} color="#fff" />
-            <Text style={styles.btnText}>Duyệt</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.rejectBtn} onPress={handleReject}>
-            <Ionicons name="close" size={20} color="#fff" />
-            <Text style={styles.btnText}>Từ chối</Text>
-          </TouchableOpacity>
+        <View style={styles.buttons}>
+          <Button title="✔️ Duyệt yêu cầu" onPress={() => handleUpdateStatus('approved')} />
+          <View style={{ height: 10 }} />
+          <Button title="❌ Từ chối yêu cầu" color="#c62828" onPress={() => handleUpdateStatus('rejected')} />
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  label: { fontSize: 14, marginBottom: 4 },
-  subHeader: { fontWeight: '600', marginTop: 10, marginBottom: 6 },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#f1f1f1',
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 6,
-  },
-  itemText: { fontSize: 14 },
-  actionRow: {
-    flexDirection: 'row',
-    marginTop: 20,
-    justifyContent: 'space-around',
-  },
-  approveBtn: {
-    backgroundColor: '#28a745',
-    padding: 12,
-    borderRadius: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rejectBtn: {
-    backgroundColor: '#dc3545',
-    padding: 12,
-    borderRadius: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  btnText: { color: '#fff', marginLeft: 6, fontWeight: '600' },
+  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#2e7d32' },
+  item: { fontSize: 16, marginBottom: 8 },
+  error: { fontSize: 16, color: 'red', marginTop: 100, textAlign: 'center' },
+  buttons: { marginTop: 20 },
 });
 
 export default RequestDetail;

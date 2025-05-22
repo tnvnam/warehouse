@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ApproveRequestList from './Request/ApproveRequestList';
 
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
@@ -73,9 +74,10 @@ export type RootStackParamList = {
 
   ProductDetail: { id: string };
 
-  RequestList: undefined;
+  RequestList: { refresh?: boolean } | undefined;
   RequestForm: undefined;
   RequestDetail: { id: string };
+  ApproveRequestList: undefined;
 
   StockCheckList: undefined;
   StockCheckForm: undefined;
@@ -127,6 +129,7 @@ const AppNavigator = () => {
         <Stack.Screen name="RequestList" component={RequestList} />
         <Stack.Screen name="RequestForm" component={RequestForm} />
         <Stack.Screen name="RequestDetail" component={RequestDetail} />
+        <Stack.Screen name="ApproveRequestList" component={ApproveRequestList} />
 
         {/* Stock */}
         <Stack.Screen name="StockCheckList" component={StockCheckList} />

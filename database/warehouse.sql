@@ -5,7 +5,7 @@
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-05-23 01:12:16
+-- Started on 2025-05-23 04:32:46
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -28,7 +28,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
 
 
 --
--- TOC entry 5334 (class 0 OID 0)
+-- TOC entry 5355 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
 --
@@ -37,7 +37,7 @@ COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UU
 
 
 --
--- TOC entry 883 (class 1247 OID 16715)
+-- TOC entry 884 (class 1247 OID 16715)
 -- Name: customer_priority; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -51,7 +51,7 @@ CREATE TYPE public.customer_priority AS ENUM (
 ALTER TYPE public.customer_priority OWNER TO postgres;
 
 --
--- TOC entry 886 (class 1247 OID 16722)
+-- TOC entry 887 (class 1247 OID 16722)
 -- Name: customer_scale; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -65,7 +65,7 @@ CREATE TYPE public.customer_scale AS ENUM (
 ALTER TYPE public.customer_scale OWNER TO postgres;
 
 --
--- TOC entry 889 (class 1247 OID 16730)
+-- TOC entry 890 (class 1247 OID 16730)
 -- Name: customer_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -79,7 +79,7 @@ CREATE TYPE public.customer_status AS ENUM (
 ALTER TYPE public.customer_status OWNER TO postgres;
 
 --
--- TOC entry 892 (class 1247 OID 16738)
+-- TOC entry 893 (class 1247 OID 16738)
 -- Name: delivery_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -94,7 +94,23 @@ CREATE TYPE public.delivery_status AS ENUM (
 ALTER TYPE public.delivery_status OWNER TO postgres;
 
 --
--- TOC entry 895 (class 1247 OID 16748)
+-- TOC entry 998 (class 1247 OID 24993)
+-- Name: inventory_status; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.inventory_status AS ENUM (
+    'normal',
+    'damaged',
+    'expired',
+    'reserved',
+    'pending'
+);
+
+
+ALTER TYPE public.inventory_status OWNER TO postgres;
+
+--
+-- TOC entry 896 (class 1247 OID 16748)
 -- Name: material_request_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -109,7 +125,7 @@ CREATE TYPE public.material_request_status AS ENUM (
 ALTER TYPE public.material_request_status OWNER TO postgres;
 
 --
--- TOC entry 898 (class 1247 OID 16758)
+-- TOC entry 899 (class 1247 OID 16758)
 -- Name: order_approval_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -123,7 +139,7 @@ CREATE TYPE public.order_approval_status AS ENUM (
 ALTER TYPE public.order_approval_status OWNER TO postgres;
 
 --
--- TOC entry 901 (class 1247 OID 16766)
+-- TOC entry 902 (class 1247 OID 16766)
 -- Name: order_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -140,7 +156,7 @@ CREATE TYPE public.order_status AS ENUM (
 ALTER TYPE public.order_status OWNER TO postgres;
 
 --
--- TOC entry 904 (class 1247 OID 16780)
+-- TOC entry 905 (class 1247 OID 16780)
 -- Name: payment_method; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -155,7 +171,7 @@ CREATE TYPE public.payment_method AS ENUM (
 ALTER TYPE public.payment_method OWNER TO postgres;
 
 --
--- TOC entry 907 (class 1247 OID 16790)
+-- TOC entry 908 (class 1247 OID 16790)
 -- Name: payment_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -169,7 +185,7 @@ CREATE TYPE public.payment_status AS ENUM (
 ALTER TYPE public.payment_status OWNER TO postgres;
 
 --
--- TOC entry 910 (class 1247 OID 16798)
+-- TOC entry 911 (class 1247 OID 16798)
 -- Name: production_order_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -185,7 +201,7 @@ CREATE TYPE public.production_order_status AS ENUM (
 ALTER TYPE public.production_order_status OWNER TO postgres;
 
 --
--- TOC entry 913 (class 1247 OID 16810)
+-- TOC entry 914 (class 1247 OID 16810)
 -- Name: purchase_request_status; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -200,7 +216,7 @@ CREATE TYPE public.purchase_request_status AS ENUM (
 ALTER TYPE public.purchase_request_status OWNER TO postgres;
 
 --
--- TOC entry 916 (class 1247 OID 16820)
+-- TOC entry 917 (class 1247 OID 16820)
 -- Name: transport_method; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -307,20 +323,49 @@ CREATE TABLE public.departments (
 ALTER TABLE public.departments OWNER TO postgres;
 
 --
--- TOC entry 244 (class 1259 OID 24969)
+-- TOC entry 245 (class 1259 OID 25049)
 -- Name: inventory; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.inventory (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    material_id uuid,
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    product_id uuid,
+    qr_code character varying(100) NOT NULL,
+    quantity numeric(10,2) NOT NULL,
+    unit_id uuid,
+    lot_number character varying(50),
+    production_date date,
+    expiry_date date,
+    supplier_id uuid,
+    customer_id uuid,
     warehouse_id uuid,
-    quantity numeric(10,2) DEFAULT 0 NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    location_id uuid,
+    actual_package_quantity numeric(10,2),
+    package_type character varying(20),
+    status public.inventory_status DEFAULT 'normal'::public.inventory_status,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT inventory_actual_package_quantity_check CHECK ((actual_package_quantity >= (0)::numeric)),
+    CONSTRAINT inventory_quantity_check CHECK ((quantity >= (0)::numeric))
 );
 
 
 ALTER TABLE public.inventory OWNER TO postgres;
+
+--
+-- TOC entry 244 (class 1259 OID 25041)
+-- Name: locations; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.locations (
+    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    code text NOT NULL,
+    name text NOT NULL,
+    description text
+);
+
+
+ALTER TABLE public.locations OWNER TO postgres;
 
 --
 -- TOC entry 222 (class 1259 OID 16871)
@@ -654,6 +699,12 @@ CREATE TABLE public.requests (
     date date DEFAULT CURRENT_DATE NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     warehouse_id uuid,
+    unit_id uuid,
+    handler_id uuid,
+    price numeric(12,2),
+    note text,
+    batch_number character varying(50),
+    expiry_date date,
     CONSTRAINT requests_quantity_check CHECK ((quantity > (0)::numeric)),
     CONSTRAINT requests_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[]))),
     CONSTRAINT requests_type_check CHECK (((type)::text = ANY ((ARRAY['import'::character varying, 'export'::character varying])::text[])))
@@ -823,7 +874,7 @@ CREATE TABLE public.warehouses (
 ALTER TABLE public.warehouses OWNER TO postgres;
 
 --
--- TOC entry 5302 (class 0 OID 16829)
+-- TOC entry 5322 (class 0 OID 16829)
 -- Dependencies: 218
 -- Data for Name: banks; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -833,7 +884,7 @@ COPY public.banks (id, bank_name, account_number, branch) FROM stdin;
 
 
 --
--- TOC entry 5303 (class 0 OID 16835)
+-- TOC entry 5323 (class 0 OID 16835)
 -- Dependencies: 219
 -- Data for Name: companies; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -843,7 +894,7 @@ COPY public.companies (id, name, tax_code, address, phone, email, is_active, cre
 
 
 --
--- TOC entry 5304 (class 0 OID 16846)
+-- TOC entry 5324 (class 0 OID 16846)
 -- Dependencies: 220
 -- Data for Name: customers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -854,30 +905,39 @@ COPY public.customers (id, tax_code, company_name, address, phone, email, contac
 
 
 --
--- TOC entry 5305 (class 0 OID 16862)
+-- TOC entry 5325 (class 0 OID 16862)
 -- Dependencies: 221
 -- Data for Name: departments; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.departments (id, code, name, description, is_active, created_at, updated_at) FROM stdin;
 7dd8c930-4099-4bdb-ac24-2302a0a9a98a	N	A	B	t	2025-05-19 07:53:10.664906	2025-05-19 07:53:10.664906
+b8d9e020-e688-40d9-91fd-eafe7e2e501d	2	B	bbb	t	2025-05-23 01:31:10.023165	2025-05-23 01:31:10.023165
 \.
 
 
 --
--- TOC entry 5328 (class 0 OID 24969)
--- Dependencies: 244
+-- TOC entry 5349 (class 0 OID 25049)
+-- Dependencies: 245
 -- Data for Name: inventory; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.inventory (id, material_id, warehouse_id, quantity, updated_at) FROM stdin;
-1ada6e54-e7a5-4f12-8761-ec40bc5a7b2c	539a8b90-58fa-4640-8de8-c6a3f28962f4	f738d696-8451-4701-bc57-0866a9c30ec7	150.00	2025-05-22 22:01:03.645402
-de5d721a-1d54-41c2-b78b-67da4aeffc1e	539a8b90-58fa-4640-8de8-c6a3f28962f4	0a28e2dd-ad84-45bb-96a8-ecbe790b75db	80.00	2025-05-22 22:01:03.645402
+COPY public.inventory (id, product_id, qr_code, quantity, unit_id, lot_number, production_date, expiry_date, supplier_id, customer_id, warehouse_id, location_id, actual_package_quantity, package_type, status, created_at, updated_at) FROM stdin;
 \.
 
 
 --
--- TOC entry 5306 (class 0 OID 16871)
+-- TOC entry 5348 (class 0 OID 25041)
+-- Dependencies: 244
+-- Data for Name: locations; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.locations (id, code, name, description) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5326 (class 0 OID 16871)
 -- Dependencies: 222
 -- Data for Name: material_request_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -888,7 +948,7 @@ COPY public.material_request_items (id, material_request_id, material_id, materi
 
 
 --
--- TOC entry 5307 (class 0 OID 16880)
+-- TOC entry 5327 (class 0 OID 16880)
 -- Dependencies: 223
 -- Data for Name: material_requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -899,7 +959,7 @@ COPY public.material_requests (id, request_code, production_order_id, requester_
 
 
 --
--- TOC entry 5308 (class 0 OID 16891)
+-- TOC entry 5328 (class 0 OID 16891)
 -- Dependencies: 224
 -- Data for Name: materials; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -910,7 +970,7 @@ COPY public.materials (id, code, name, specification, category_id, unit_id, bran
 
 
 --
--- TOC entry 5309 (class 0 OID 16902)
+-- TOC entry 5329 (class 0 OID 16902)
 -- Dependencies: 225
 -- Data for Name: order_approval; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -920,7 +980,7 @@ COPY public.order_approval (id, order_id, approver_id, approved_at, approval_sta
 
 
 --
--- TOC entry 5310 (class 0 OID 16911)
+-- TOC entry 5330 (class 0 OID 16911)
 -- Dependencies: 226
 -- Data for Name: order_delivery; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -930,7 +990,7 @@ COPY public.order_delivery (id, order_id, delivery_address, transport_method, sh
 
 
 --
--- TOC entry 5311 (class 0 OID 16921)
+-- TOC entry 5331 (class 0 OID 16921)
 -- Dependencies: 227
 -- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -940,7 +1000,7 @@ COPY public.order_items (id, order_id, product_code, product_type, material, spe
 
 
 --
--- TOC entry 5312 (class 0 OID 16933)
+-- TOC entry 5332 (class 0 OID 16933)
 -- Dependencies: 228
 -- Data for Name: order_payment; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -950,7 +1010,7 @@ COPY public.order_payment (id, order_id, payment_terms, payment_method, bank_id,
 
 
 --
--- TOC entry 5313 (class 0 OID 16943)
+-- TOC entry 5333 (class 0 OID 16943)
 -- Dependencies: 229
 -- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -960,7 +1020,7 @@ COPY public.orders (id, order_code, customer_id, order_date, delivery_date_requi
 
 
 --
--- TOC entry 5314 (class 0 OID 16953)
+-- TOC entry 5334 (class 0 OID 16953)
 -- Dependencies: 230
 -- Data for Name: product_categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -971,7 +1031,7 @@ COPY public.product_categories (id, code, name, description, is_active, created_
 
 
 --
--- TOC entry 5315 (class 0 OID 16962)
+-- TOC entry 5335 (class 0 OID 16962)
 -- Dependencies: 231
 -- Data for Name: production_orders; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -982,7 +1042,7 @@ COPY public.production_orders (id, order_code, product_id, planned_quantity, act
 
 
 --
--- TOC entry 5316 (class 0 OID 16976)
+-- TOC entry 5336 (class 0 OID 16976)
 -- Dependencies: 232
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -994,7 +1054,7 @@ COPY public.products (id, code, name, barcode, category_id, specification, unit_
 
 
 --
--- TOC entry 5317 (class 0 OID 16987)
+-- TOC entry 5337 (class 0 OID 16987)
 -- Dependencies: 233
 -- Data for Name: purchase_request_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1004,7 +1064,7 @@ COPY public.purchase_request_items (id, purchase_request_id, material_id, materi
 
 
 --
--- TOC entry 5318 (class 0 OID 16996)
+-- TOC entry 5338 (class 0 OID 16996)
 -- Dependencies: 234
 -- Data for Name: purchase_requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1014,22 +1074,21 @@ COPY public.purchase_requests (id, request_code, department_id, requester_id, cr
 
 
 --
--- TOC entry 5327 (class 0 OID 24947)
+-- TOC entry 5347 (class 0 OID 24947)
 -- Dependencies: 243
 -- Data for Name: requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.requests (id, type, department_id, material_id, quantity, status, date, created_at, warehouse_id) FROM stdin;
-1dceff7e-de34-48e1-8110-026fde58e4d4	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	pending	2025-05-22	2025-05-22 21:44:22.751039	f738d696-8451-4701-bc57-0866a9c30ec7
-1422a5f7-3eed-4da6-914c-75c8be3cefff	export	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	pending	2025-05-22	2025-05-22 21:45:59.645686	f738d696-8451-4701-bc57-0866a9c30ec7
-62e95a9f-98ea-4dc3-92b6-bcbcbd2a5cea	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	100.00	approved	2025-05-22	2025-05-22 22:38:00.716562	f738d696-8451-4701-bc57-0866a9c30ec7
-e457e2b7-b4c4-4b27-a980-825c32e1e1e6	import	\N	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	approved	2025-05-22	2025-05-23 01:05:25.394694	f738d696-8451-4701-bc57-0866a9c30ec7
-263ea078-f3ee-458e-ab15-b6bcae642c99	export	\N	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	approved	2025-05-22	2025-05-23 01:06:31.025189	f738d696-8451-4701-bc57-0866a9c30ec7
+COPY public.requests (id, type, department_id, material_id, quantity, status, date, created_at, warehouse_id, unit_id, handler_id, price, note, batch_number, expiry_date) FROM stdin;
+9160e5c3-7b3a-43f4-890b-b67c09be5f61	export	b8d9e020-e688-40d9-91fd-eafe7e2e501d	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	rejected	2025-05-22	2025-05-23 03:12:12.751262	\N	ebba51b8-1c20-452b-afec-3ff5b0a454f3	\N	\N	\N	\N	\N
+7b9da628-c3d1-4cca-9278-e6f5f40e72dd	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	2.00	pending	2025-05-22	2025-05-23 03:41:32.800561	\N	d4f101da-e6f5-4a81-84b1-f94e0713113d	\N	\N	\N	\N	\N
+7e887745-df84-4090-b7fd-d1e7cce737c2	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	approved	2025-05-22	2025-05-23 03:07:08.936078	\N	d4f101da-e6f5-4a81-84b1-f94e0713113d	\N	\N	\N	\N	\N
+5e687d15-0c93-44ba-b449-0bfb4b117f55	import	\N	539a8b90-58fa-4640-8de8-c6a3f28962f4	2.00	approved	2025-05-22	2025-05-23 04:30:49.637813	f738d696-8451-4701-bc57-0866a9c30ec7	d4f101da-e6f5-4a81-84b1-f94e0713113d	af5cdd63-3078-4f5c-98b6-4c07e5fe3d34	3.00	A	2	2025-05-22
 \.
 
 
 --
--- TOC entry 5319 (class 0 OID 17006)
+-- TOC entry 5339 (class 0 OID 17006)
 -- Dependencies: 235
 -- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1043,7 +1102,7 @@ Other	Thành phần khác	{"permissions": ["view"]}	active	2025-05-19 07:37:44.3
 
 
 --
--- TOC entry 5325 (class 0 OID 24914)
+-- TOC entry 5345 (class 0 OID 24914)
 -- Dependencies: 241
 -- Data for Name: stock_check; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1055,7 +1114,7 @@ COPY public.stock_check (id, warehouse_id, date, note, created_at) FROM stdin;
 
 
 --
--- TOC entry 5326 (class 0 OID 24928)
+-- TOC entry 5346 (class 0 OID 24928)
 -- Dependencies: 242
 -- Data for Name: stock_check_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1065,7 +1124,7 @@ COPY public.stock_check_items (id, stock_check_id, material_id, expected_quantit
 
 
 --
--- TOC entry 5320 (class 0 OID 17015)
+-- TOC entry 5340 (class 0 OID 17015)
 -- Dependencies: 236
 -- Data for Name: suppliers; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1076,7 +1135,7 @@ c96d14ee-3bda-4879-83ea-a7dabfda0dfa	NCC1	Nha cc 1	ma so thue	bd	0123456789	ncc@
 
 
 --
--- TOC entry 5321 (class 0 OID 17025)
+-- TOC entry 5341 (class 0 OID 17025)
 -- Dependencies: 237
 -- Data for Name: unit_conversions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1087,7 +1146,7 @@ COPY public.unit_conversions (id, product_id, from_unit_id, to_unit_id, factor, 
 
 
 --
--- TOC entry 5322 (class 0 OID 17035)
+-- TOC entry 5342 (class 0 OID 17035)
 -- Dependencies: 238
 -- Data for Name: units; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1099,7 +1158,7 @@ ebba51b8-1c20-452b-afec-3ff5b0a454f3	m2	Square meter	Mét vuông
 
 
 --
--- TOC entry 5323 (class 0 OID 17041)
+-- TOC entry 5343 (class 0 OID 17041)
 -- Dependencies: 239
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1108,11 +1167,12 @@ COPY public.users (id, username, password, full_name, email, phone, department_i
 af5cdd63-3078-4f5c-98b6-4c07e5fe3d34	tnvnam	$2b$10$xhH2jba3hcDm93sKx.kpO.9W1dbGCP78v/Tk8S5tM/DLZGJqeZXm.	Trần Nguyễn Vũ Nam	tnvnam.it@gmail.com	0123456789	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	148fa076-70da-40c0-9c83-4ea2004b39cb	t	2025-05-19 08:55:12.457223	2025-05-19 08:55:12.457223
 1d176032-6d02-4fe4-b0e8-19f3a88fa0fe	vanhiep2	$2b$10$nFDCQX9qePcIFaPIDn1vGuw9im0aGYwE0QddoevLzqGvph.dWP/EW	Le Van Hiep 	hiep2@gmail.com	0215898745	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	8b79a84f-436c-4dd8-9c6e-2266b94dc379	t	2025-05-22 13:50:31.37393	2025-05-22 13:50:31.37393
 901f4365-b038-464c-bc37-51fd32ee9501	vanhiep1	$2b$10$RSTS7ew3gYOuYTdOyRNy9.wlsecnoD16tpaibRqm6NcELpox5XfNS	Le Van Hiep	hiep1@gmail.com	0325894251	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	148fa076-70da-40c0-9c83-4ea2004b39cb	t	2025-05-22 08:52:56.045959	2025-05-22 15:20:47.344759
+62ad8d42-b2d4-4ee3-b67a-23747df0143f	vanhiep3	$2b$10$nvG6PFGEVSiR.jLIWR9mcu7jAnGcQHMckjV/xutKhYNxKgiLo6UEm	Le Van Hiep	hiep3@gmail.com	0325897452	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	8b79a84f-436c-4dd8-9c6e-2266b94dc379	t	2025-05-23 03:30:11.555443	2025-05-23 03:30:11.555443
 \.
 
 
 --
--- TOC entry 5324 (class 0 OID 17050)
+-- TOC entry 5344 (class 0 OID 17050)
 -- Dependencies: 240
 -- Data for Name: warehouses; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1124,7 +1184,7 @@ f738d696-8451-4701-bc57-0866a9c30ec7	K01	Kho 01	\N	dia chi	af5cdd63-3078-4f5c-98
 
 
 --
--- TOC entry 5022 (class 2606 OID 17060)
+-- TOC entry 5033 (class 2606 OID 17060)
 -- Name: banks banks_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1133,7 +1193,7 @@ ALTER TABLE ONLY public.banks
 
 
 --
--- TOC entry 5024 (class 2606 OID 17062)
+-- TOC entry 5035 (class 2606 OID 17062)
 -- Name: companies companies_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1142,7 +1202,7 @@ ALTER TABLE ONLY public.companies
 
 
 --
--- TOC entry 5026 (class 2606 OID 17064)
+-- TOC entry 5037 (class 2606 OID 17064)
 -- Name: companies companies_tax_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1151,7 +1211,7 @@ ALTER TABLE ONLY public.companies
 
 
 --
--- TOC entry 5028 (class 2606 OID 17066)
+-- TOC entry 5039 (class 2606 OID 17066)
 -- Name: customers customers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1160,7 +1220,7 @@ ALTER TABLE ONLY public.customers
 
 
 --
--- TOC entry 5030 (class 2606 OID 17068)
+-- TOC entry 5041 (class 2606 OID 17068)
 -- Name: customers customers_tax_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1169,7 +1229,7 @@ ALTER TABLE ONLY public.customers
 
 
 --
--- TOC entry 5032 (class 2606 OID 17070)
+-- TOC entry 5043 (class 2606 OID 17070)
 -- Name: departments departments_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1178,7 +1238,7 @@ ALTER TABLE ONLY public.departments
 
 
 --
--- TOC entry 5034 (class 2606 OID 17072)
+-- TOC entry 5045 (class 2606 OID 17072)
 -- Name: departments departments_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1187,7 +1247,7 @@ ALTER TABLE ONLY public.departments
 
 
 --
--- TOC entry 5110 (class 2606 OID 24976)
+-- TOC entry 5123 (class 2606 OID 25059)
 -- Name: inventory inventory_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1196,7 +1256,25 @@ ALTER TABLE ONLY public.inventory
 
 
 --
--- TOC entry 5036 (class 2606 OID 17074)
+-- TOC entry 5125 (class 2606 OID 25061)
+-- Name: inventory inventory_qr_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventory
+    ADD CONSTRAINT inventory_qr_code_key UNIQUE (qr_code);
+
+
+--
+-- TOC entry 5121 (class 2606 OID 25048)
+-- Name: locations locations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.locations
+    ADD CONSTRAINT locations_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 5047 (class 2606 OID 17074)
 -- Name: material_request_items material_request_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1205,7 +1283,7 @@ ALTER TABLE ONLY public.material_request_items
 
 
 --
--- TOC entry 5038 (class 2606 OID 17076)
+-- TOC entry 5049 (class 2606 OID 17076)
 -- Name: material_requests material_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1214,7 +1292,7 @@ ALTER TABLE ONLY public.material_requests
 
 
 --
--- TOC entry 5040 (class 2606 OID 17078)
+-- TOC entry 5051 (class 2606 OID 17078)
 -- Name: material_requests material_requests_request_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1223,7 +1301,7 @@ ALTER TABLE ONLY public.material_requests
 
 
 --
--- TOC entry 5042 (class 2606 OID 17080)
+-- TOC entry 5053 (class 2606 OID 17080)
 -- Name: materials materials_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1232,7 +1310,7 @@ ALTER TABLE ONLY public.materials
 
 
 --
--- TOC entry 5044 (class 2606 OID 17082)
+-- TOC entry 5055 (class 2606 OID 17082)
 -- Name: materials materials_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1241,7 +1319,7 @@ ALTER TABLE ONLY public.materials
 
 
 --
--- TOC entry 5046 (class 2606 OID 17084)
+-- TOC entry 5057 (class 2606 OID 17084)
 -- Name: order_approval order_approval_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1250,7 +1328,7 @@ ALTER TABLE ONLY public.order_approval
 
 
 --
--- TOC entry 5048 (class 2606 OID 17086)
+-- TOC entry 5059 (class 2606 OID 17086)
 -- Name: order_delivery order_delivery_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1259,7 +1337,7 @@ ALTER TABLE ONLY public.order_delivery
 
 
 --
--- TOC entry 5050 (class 2606 OID 17088)
+-- TOC entry 5061 (class 2606 OID 17088)
 -- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1268,7 +1346,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- TOC entry 5052 (class 2606 OID 17090)
+-- TOC entry 5063 (class 2606 OID 17090)
 -- Name: order_payment order_payment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1277,7 +1355,7 @@ ALTER TABLE ONLY public.order_payment
 
 
 --
--- TOC entry 5054 (class 2606 OID 17092)
+-- TOC entry 5065 (class 2606 OID 17092)
 -- Name: orders orders_order_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1286,7 +1364,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- TOC entry 5056 (class 2606 OID 17094)
+-- TOC entry 5067 (class 2606 OID 17094)
 -- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1295,7 +1373,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- TOC entry 5058 (class 2606 OID 17096)
+-- TOC entry 5069 (class 2606 OID 17096)
 -- Name: product_categories product_categories_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1304,7 +1382,7 @@ ALTER TABLE ONLY public.product_categories
 
 
 --
--- TOC entry 5060 (class 2606 OID 17098)
+-- TOC entry 5071 (class 2606 OID 17098)
 -- Name: product_categories product_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1313,7 +1391,7 @@ ALTER TABLE ONLY public.product_categories
 
 
 --
--- TOC entry 5062 (class 2606 OID 17100)
+-- TOC entry 5073 (class 2606 OID 17100)
 -- Name: production_orders production_orders_order_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1322,7 +1400,7 @@ ALTER TABLE ONLY public.production_orders
 
 
 --
--- TOC entry 5064 (class 2606 OID 17102)
+-- TOC entry 5075 (class 2606 OID 17102)
 -- Name: production_orders production_orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1331,7 +1409,7 @@ ALTER TABLE ONLY public.production_orders
 
 
 --
--- TOC entry 5066 (class 2606 OID 17104)
+-- TOC entry 5077 (class 2606 OID 17104)
 -- Name: products products_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1340,7 +1418,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- TOC entry 5068 (class 2606 OID 17106)
+-- TOC entry 5079 (class 2606 OID 17106)
 -- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1349,7 +1427,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- TOC entry 5070 (class 2606 OID 17108)
+-- TOC entry 5081 (class 2606 OID 17108)
 -- Name: purchase_request_items purchase_request_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1358,7 +1436,7 @@ ALTER TABLE ONLY public.purchase_request_items
 
 
 --
--- TOC entry 5072 (class 2606 OID 17110)
+-- TOC entry 5083 (class 2606 OID 17110)
 -- Name: purchase_requests purchase_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1367,7 +1445,7 @@ ALTER TABLE ONLY public.purchase_requests
 
 
 --
--- TOC entry 5074 (class 2606 OID 17112)
+-- TOC entry 5085 (class 2606 OID 17112)
 -- Name: purchase_requests purchase_requests_request_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1376,7 +1454,7 @@ ALTER TABLE ONLY public.purchase_requests
 
 
 --
--- TOC entry 5108 (class 2606 OID 24958)
+-- TOC entry 5119 (class 2606 OID 24958)
 -- Name: requests requests_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1385,7 +1463,7 @@ ALTER TABLE ONLY public.requests
 
 
 --
--- TOC entry 5076 (class 2606 OID 17114)
+-- TOC entry 5087 (class 2606 OID 17114)
 -- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1394,7 +1472,7 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- TOC entry 5106 (class 2606 OID 24936)
+-- TOC entry 5117 (class 2606 OID 24936)
 -- Name: stock_check_items stock_check_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1403,7 +1481,7 @@ ALTER TABLE ONLY public.stock_check_items
 
 
 --
--- TOC entry 5104 (class 2606 OID 24922)
+-- TOC entry 5115 (class 2606 OID 24922)
 -- Name: stock_check stock_check_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1412,7 +1490,7 @@ ALTER TABLE ONLY public.stock_check
 
 
 --
--- TOC entry 5078 (class 2606 OID 17116)
+-- TOC entry 5089 (class 2606 OID 17116)
 -- Name: suppliers suppliers_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1421,7 +1499,7 @@ ALTER TABLE ONLY public.suppliers
 
 
 --
--- TOC entry 5080 (class 2606 OID 17118)
+-- TOC entry 5091 (class 2606 OID 17118)
 -- Name: suppliers suppliers_email_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1430,7 +1508,7 @@ ALTER TABLE ONLY public.suppliers
 
 
 --
--- TOC entry 5082 (class 2606 OID 17120)
+-- TOC entry 5093 (class 2606 OID 17120)
 -- Name: suppliers suppliers_phone_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1439,7 +1517,7 @@ ALTER TABLE ONLY public.suppliers
 
 
 --
--- TOC entry 5084 (class 2606 OID 17122)
+-- TOC entry 5095 (class 2606 OID 17122)
 -- Name: suppliers suppliers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1448,7 +1526,7 @@ ALTER TABLE ONLY public.suppliers
 
 
 --
--- TOC entry 5086 (class 2606 OID 17124)
+-- TOC entry 5097 (class 2606 OID 17124)
 -- Name: unit_conversions unit_conversions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1457,7 +1535,7 @@ ALTER TABLE ONLY public.unit_conversions
 
 
 --
--- TOC entry 5088 (class 2606 OID 17126)
+-- TOC entry 5099 (class 2606 OID 17126)
 -- Name: unit_conversions unit_conversions_product_from_to_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1466,7 +1544,7 @@ ALTER TABLE ONLY public.unit_conversions
 
 
 --
--- TOC entry 5090 (class 2606 OID 17128)
+-- TOC entry 5101 (class 2606 OID 17128)
 -- Name: units units_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1475,7 +1553,7 @@ ALTER TABLE ONLY public.units
 
 
 --
--- TOC entry 5092 (class 2606 OID 17130)
+-- TOC entry 5103 (class 2606 OID 17130)
 -- Name: units units_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1484,7 +1562,7 @@ ALTER TABLE ONLY public.units
 
 
 --
--- TOC entry 5094 (class 2606 OID 17132)
+-- TOC entry 5105 (class 2606 OID 17132)
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1493,7 +1571,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 5096 (class 2606 OID 17134)
+-- TOC entry 5107 (class 2606 OID 17134)
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1502,7 +1580,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 5098 (class 2606 OID 17136)
+-- TOC entry 5109 (class 2606 OID 17136)
 -- Name: users users_username_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1511,7 +1589,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 5100 (class 2606 OID 17138)
+-- TOC entry 5111 (class 2606 OID 17138)
 -- Name: warehouses warehouses_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1520,7 +1598,7 @@ ALTER TABLE ONLY public.warehouses
 
 
 --
--- TOC entry 5102 (class 2606 OID 17140)
+-- TOC entry 5113 (class 2606 OID 17140)
 -- Name: warehouses warehouses_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1529,7 +1607,7 @@ ALTER TABLE ONLY public.warehouses
 
 
 --
--- TOC entry 5111 (class 2606 OID 17141)
+-- TOC entry 5126 (class 2606 OID 17141)
 -- Name: customers customers_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1538,7 +1616,7 @@ ALTER TABLE ONLY public.customers
 
 
 --
--- TOC entry 5112 (class 2606 OID 17146)
+-- TOC entry 5127 (class 2606 OID 17146)
 -- Name: customers customers_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1547,25 +1625,61 @@ ALTER TABLE ONLY public.customers
 
 
 --
--- TOC entry 5155 (class 2606 OID 24977)
--- Name: inventory inventory_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- TOC entry 5171 (class 2606 OID 25077)
+-- Name: inventory inventory_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.inventory
-    ADD CONSTRAINT inventory_material_id_fkey FOREIGN KEY (material_id) REFERENCES public.materials(id);
+    ADD CONSTRAINT inventory_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customers(id) ON DELETE SET NULL;
 
 
 --
--- TOC entry 5156 (class 2606 OID 24982)
+-- TOC entry 5172 (class 2606 OID 25087)
+-- Name: inventory inventory_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventory
+    ADD CONSTRAINT inventory_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5173 (class 2606 OID 25062)
+-- Name: inventory inventory_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventory
+    ADD CONSTRAINT inventory_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5174 (class 2606 OID 25072)
+-- Name: inventory inventory_supplier_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventory
+    ADD CONSTRAINT inventory_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.suppliers(id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5175 (class 2606 OID 25067)
+-- Name: inventory inventory_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.inventory
+    ADD CONSTRAINT inventory_unit_id_fkey FOREIGN KEY (unit_id) REFERENCES public.units(id) ON DELETE SET NULL;
+
+
+--
+-- TOC entry 5176 (class 2606 OID 25082)
 -- Name: inventory inventory_warehouse_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.inventory
-    ADD CONSTRAINT inventory_warehouse_id_fkey FOREIGN KEY (warehouse_id) REFERENCES public.warehouses(id);
+    ADD CONSTRAINT inventory_warehouse_id_fkey FOREIGN KEY (warehouse_id) REFERENCES public.warehouses(id) ON DELETE SET NULL;
 
 
 --
--- TOC entry 5113 (class 2606 OID 17151)
+-- TOC entry 5128 (class 2606 OID 17151)
 -- Name: material_request_items material_request_items_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1574,7 +1688,7 @@ ALTER TABLE ONLY public.material_request_items
 
 
 --
--- TOC entry 5114 (class 2606 OID 17156)
+-- TOC entry 5129 (class 2606 OID 17156)
 -- Name: material_request_items material_request_items_material_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1583,7 +1697,7 @@ ALTER TABLE ONLY public.material_request_items
 
 
 --
--- TOC entry 5115 (class 2606 OID 17161)
+-- TOC entry 5130 (class 2606 OID 17161)
 -- Name: material_request_items material_request_items_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1592,7 +1706,7 @@ ALTER TABLE ONLY public.material_request_items
 
 
 --
--- TOC entry 5116 (class 2606 OID 17166)
+-- TOC entry 5131 (class 2606 OID 17166)
 -- Name: material_requests material_requests_production_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1601,7 +1715,7 @@ ALTER TABLE ONLY public.material_requests
 
 
 --
--- TOC entry 5117 (class 2606 OID 17171)
+-- TOC entry 5132 (class 2606 OID 17171)
 -- Name: material_requests material_requests_requester_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1610,7 +1724,7 @@ ALTER TABLE ONLY public.material_requests
 
 
 --
--- TOC entry 5118 (class 2606 OID 17176)
+-- TOC entry 5133 (class 2606 OID 17176)
 -- Name: materials materials_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1619,7 +1733,7 @@ ALTER TABLE ONLY public.materials
 
 
 --
--- TOC entry 5119 (class 2606 OID 17181)
+-- TOC entry 5134 (class 2606 OID 17181)
 -- Name: materials materials_supplier_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1628,7 +1742,7 @@ ALTER TABLE ONLY public.materials
 
 
 --
--- TOC entry 5120 (class 2606 OID 17186)
+-- TOC entry 5135 (class 2606 OID 17186)
 -- Name: materials materials_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1637,7 +1751,7 @@ ALTER TABLE ONLY public.materials
 
 
 --
--- TOC entry 5121 (class 2606 OID 17191)
+-- TOC entry 5136 (class 2606 OID 17191)
 -- Name: order_approval order_approval_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1646,7 +1760,7 @@ ALTER TABLE ONLY public.order_approval
 
 
 --
--- TOC entry 5122 (class 2606 OID 17196)
+-- TOC entry 5137 (class 2606 OID 17196)
 -- Name: order_approval order_approval_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1655,7 +1769,7 @@ ALTER TABLE ONLY public.order_approval
 
 
 --
--- TOC entry 5123 (class 2606 OID 17201)
+-- TOC entry 5138 (class 2606 OID 17201)
 -- Name: order_delivery order_delivery_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1664,7 +1778,7 @@ ALTER TABLE ONLY public.order_delivery
 
 
 --
--- TOC entry 5124 (class 2606 OID 17206)
+-- TOC entry 5139 (class 2606 OID 17206)
 -- Name: order_items order_items_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1673,7 +1787,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- TOC entry 5125 (class 2606 OID 17211)
+-- TOC entry 5140 (class 2606 OID 17211)
 -- Name: order_payment order_payment_bank_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1682,7 +1796,7 @@ ALTER TABLE ONLY public.order_payment
 
 
 --
--- TOC entry 5126 (class 2606 OID 17216)
+-- TOC entry 5141 (class 2606 OID 17216)
 -- Name: order_payment order_payment_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1691,7 +1805,7 @@ ALTER TABLE ONLY public.order_payment
 
 
 --
--- TOC entry 5127 (class 2606 OID 17221)
+-- TOC entry 5142 (class 2606 OID 17221)
 -- Name: orders orders_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1700,7 +1814,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- TOC entry 5128 (class 2606 OID 17226)
+-- TOC entry 5143 (class 2606 OID 17226)
 -- Name: production_orders production_orders_approver_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1709,7 +1823,7 @@ ALTER TABLE ONLY public.production_orders
 
 
 --
--- TOC entry 5129 (class 2606 OID 17231)
+-- TOC entry 5144 (class 2606 OID 17231)
 -- Name: production_orders production_orders_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1718,7 +1832,7 @@ ALTER TABLE ONLY public.production_orders
 
 
 --
--- TOC entry 5130 (class 2606 OID 17236)
+-- TOC entry 5145 (class 2606 OID 17236)
 -- Name: production_orders production_orders_requester_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1727,7 +1841,7 @@ ALTER TABLE ONLY public.production_orders
 
 
 --
--- TOC entry 5131 (class 2606 OID 17241)
+-- TOC entry 5146 (class 2606 OID 17241)
 -- Name: products products_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1736,7 +1850,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- TOC entry 5132 (class 2606 OID 17246)
+-- TOC entry 5147 (class 2606 OID 17246)
 -- Name: products products_supplier_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1745,7 +1859,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- TOC entry 5133 (class 2606 OID 17251)
+-- TOC entry 5148 (class 2606 OID 17251)
 -- Name: products products_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1754,7 +1868,7 @@ ALTER TABLE ONLY public.products
 
 
 --
--- TOC entry 5134 (class 2606 OID 17256)
+-- TOC entry 5149 (class 2606 OID 17256)
 -- Name: purchase_request_items purchase_request_items_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1763,7 +1877,7 @@ ALTER TABLE ONLY public.purchase_request_items
 
 
 --
--- TOC entry 5135 (class 2606 OID 17261)
+-- TOC entry 5150 (class 2606 OID 17261)
 -- Name: purchase_request_items purchase_request_items_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1772,7 +1886,7 @@ ALTER TABLE ONLY public.purchase_request_items
 
 
 --
--- TOC entry 5136 (class 2606 OID 17266)
+-- TOC entry 5151 (class 2606 OID 17266)
 -- Name: purchase_request_items purchase_request_items_purchase_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1781,7 +1895,7 @@ ALTER TABLE ONLY public.purchase_request_items
 
 
 --
--- TOC entry 5137 (class 2606 OID 17271)
+-- TOC entry 5152 (class 2606 OID 17271)
 -- Name: purchase_request_items purchase_request_items_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1790,7 +1904,7 @@ ALTER TABLE ONLY public.purchase_request_items
 
 
 --
--- TOC entry 5138 (class 2606 OID 17276)
+-- TOC entry 5153 (class 2606 OID 17276)
 -- Name: purchase_requests purchase_requests_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1799,7 +1913,7 @@ ALTER TABLE ONLY public.purchase_requests
 
 
 --
--- TOC entry 5139 (class 2606 OID 17281)
+-- TOC entry 5154 (class 2606 OID 17281)
 -- Name: purchase_requests purchase_requests_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1808,7 +1922,7 @@ ALTER TABLE ONLY public.purchase_requests
 
 
 --
--- TOC entry 5140 (class 2606 OID 17286)
+-- TOC entry 5155 (class 2606 OID 17286)
 -- Name: purchase_requests purchase_requests_requester_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1817,7 +1931,7 @@ ALTER TABLE ONLY public.purchase_requests
 
 
 --
--- TOC entry 5152 (class 2606 OID 24959)
+-- TOC entry 5167 (class 2606 OID 24959)
 -- Name: requests requests_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1826,7 +1940,16 @@ ALTER TABLE ONLY public.requests
 
 
 --
--- TOC entry 5153 (class 2606 OID 24964)
+-- TOC entry 5168 (class 2606 OID 25092)
+-- Name: requests requests_handler_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.requests
+    ADD CONSTRAINT requests_handler_id_fkey FOREIGN KEY (handler_id) REFERENCES public.users(id);
+
+
+--
+-- TOC entry 5169 (class 2606 OID 24964)
 -- Name: requests requests_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1835,7 +1958,7 @@ ALTER TABLE ONLY public.requests
 
 
 --
--- TOC entry 5154 (class 2606 OID 24987)
+-- TOC entry 5170 (class 2606 OID 24987)
 -- Name: requests requests_warehouse_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1844,7 +1967,7 @@ ALTER TABLE ONLY public.requests
 
 
 --
--- TOC entry 5150 (class 2606 OID 24942)
+-- TOC entry 5165 (class 2606 OID 24942)
 -- Name: stock_check_items stock_check_items_material_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1853,7 +1976,7 @@ ALTER TABLE ONLY public.stock_check_items
 
 
 --
--- TOC entry 5151 (class 2606 OID 24937)
+-- TOC entry 5166 (class 2606 OID 24937)
 -- Name: stock_check_items stock_check_items_stock_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1862,7 +1985,7 @@ ALTER TABLE ONLY public.stock_check_items
 
 
 --
--- TOC entry 5149 (class 2606 OID 24923)
+-- TOC entry 5164 (class 2606 OID 24923)
 -- Name: stock_check stock_check_warehouse_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1871,7 +1994,7 @@ ALTER TABLE ONLY public.stock_check
 
 
 --
--- TOC entry 5141 (class 2606 OID 17291)
+-- TOC entry 5156 (class 2606 OID 17291)
 -- Name: suppliers suppliers_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1880,7 +2003,7 @@ ALTER TABLE ONLY public.suppliers
 
 
 --
--- TOC entry 5142 (class 2606 OID 17296)
+-- TOC entry 5157 (class 2606 OID 17296)
 -- Name: unit_conversions unit_conversions_from_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1889,7 +2012,7 @@ ALTER TABLE ONLY public.unit_conversions
 
 
 --
--- TOC entry 5143 (class 2606 OID 17301)
+-- TOC entry 5158 (class 2606 OID 17301)
 -- Name: unit_conversions unit_conversions_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1898,7 +2021,7 @@ ALTER TABLE ONLY public.unit_conversions
 
 
 --
--- TOC entry 5144 (class 2606 OID 17306)
+-- TOC entry 5159 (class 2606 OID 17306)
 -- Name: unit_conversions unit_conversions_to_unit_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1907,7 +2030,7 @@ ALTER TABLE ONLY public.unit_conversions
 
 
 --
--- TOC entry 5145 (class 2606 OID 17311)
+-- TOC entry 5160 (class 2606 OID 17311)
 -- Name: users users_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1916,7 +2039,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 5146 (class 2606 OID 17316)
+-- TOC entry 5161 (class 2606 OID 17316)
 -- Name: users users_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1925,7 +2048,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 5147 (class 2606 OID 17321)
+-- TOC entry 5162 (class 2606 OID 17321)
 -- Name: warehouses warehouses_manager_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1934,7 +2057,7 @@ ALTER TABLE ONLY public.warehouses
 
 
 --
--- TOC entry 5148 (class 2606 OID 17326)
+-- TOC entry 5163 (class 2606 OID 17326)
 -- Name: warehouses warehouses_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1942,7 +2065,7 @@ ALTER TABLE ONLY public.warehouses
     ADD CONSTRAINT warehouses_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.warehouses(id) ON DELETE SET NULL;
 
 
--- Completed on 2025-05-23 01:12:16
+-- Completed on 2025-05-23 04:32:46
 
 --
 -- PostgreSQL database dump complete

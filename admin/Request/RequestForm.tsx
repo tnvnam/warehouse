@@ -3,129 +3,144 @@ import {
   View,
   Text,
   TextInput,
-  Alert,
   TouchableOpacity,
+  Alert,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../AppNavigator';
+
+interface Item {
+  id: string;
+  name: string;
+}
 
 const RequestForm = () => {
-  const [type, setType] = useState<'import' | 'export'>('import');
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [materials, setMaterials] = useState<any[]>([]);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [departments, setDepartments] = useState<Item[]>([]);
+  const [materials, setMaterials] = useState<Item[]>([]);
+  const [units, setUnits] = useState<Item[]>([]);
+
   const [departmentId, setDepartmentId] = useState('');
   const [materialId, setMaterialId] = useState('');
+  const [unitId, setUnitId] = useState('');
+  const [type, setType] = useState<'import' | 'export'>('import');
   const [quantity, setQuantity] = useState('');
-  const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const fetchData = async () => {
-    try {
-      const [depRes, matRes] = await Promise.all([
-        fetch('http://10.0.2.2:3000/departments'),
-        fetch('http://10.0.2.2:3000/materials'),
-      ]);
-      const depData = await depRes.json();
-      const matData = await matRes.json();
-      setDepartments(depData);
-      setMaterials(matData);
-      if (depData.length > 0) setDepartmentId(depData[0].id);
-      if (matData.length > 0) setMaterialId(matData[0].id);
-    } catch (err) {
-      Alert.alert('Lỗi', 'Không thể tải dữ liệu');
-    }
-  };
+  useEffect(() => {
+    fetch('http://10.0.2.2:3000/departments')
+      .then(res => res.json())
+      .then(setDepartments)
+      .catch(() => Alert.alert('Lỗi', 'Không thể tải phòng ban'));
 
-  const submit = async () => {
-    if (!type || !departmentId || !materialId || !quantity) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ thông tin');
-      return;
-    }
+    fetch('http://10.0.2.2:3000/materials')
+      .then(res => res.json())
+      .then(setMaterials)
+      .catch(() => Alert.alert('Lỗi', 'Không thể tải vật tư'));
 
-    const parsedQuantity = parseFloat(quantity);
-    if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
-      Alert.alert('Lỗi', 'Số lượng không hợp lệ');
+    fetch('http://10.0.2.2:3000/units')
+      .then(res => res.json())
+      .then(setUnits)
+      .catch(() => Alert.alert('Lỗi', 'Không thể tải đơn vị tính'));
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!departmentId || !materialId || !unitId || !quantity) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ các trường.');
       return;
     }
 
     try {
-      setLoading(true);
-      const res = await fetch('http://10.0.2.2:3000/requests', {
+      const res = await fetch('http://10.0.2.2:3000/requests/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type,
           department_id: departmentId,
           material_id: materialId,
-          quantity: parsedQuantity,
+          unit_id: unitId,
+          type,
+          quantity: parseFloat(quantity),
+          date: date.toISOString().split('T')[0],
         }),
       });
 
       if (res.ok) {
-        Alert.alert('Thành công', 'Đã tạo phiếu yêu cầu', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert('Thành công', 'Yêu cầu đã được tạo');
+        navigation.navigate('RequestList', { refresh: true }); // 👈 reload
       } else {
-        Alert.alert('Lỗi', 'Tạo phiếu thất bại');
+        throw new Error();
       }
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể kết nối server');
-    } finally {
-      setLoading(false);
+      Alert.alert('Lỗi', 'Không thể tạo yêu cầu');
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
-
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>📝 Tạo phiếu yêu cầu</Text>
-
-      <Text style={styles.label}>Loại phiếu</Text>
-      <Picker selectedValue={type} onValueChange={setType} style={styles.picker}>
-        <Picker.Item label="Nhập kho" value="import" />
-        <Picker.Item label="Xuất kho" value="export" />
-      </Picker>
+      <Text style={styles.header}>Tạo phiếu yêu cầu</Text>
 
       <Text style={styles.label}>Phòng ban</Text>
-      <Picker
-        selectedValue={departmentId}
-        onValueChange={setDepartmentId}
-        style={styles.picker}
-      >
-        {departments.map((d) => (
-          <Picker.Item key={d.id} label={d.name} value={d.id} />
+      <Picker selectedValue={departmentId} onValueChange={setDepartmentId} style={styles.input}>
+        <Picker.Item label="-- Chọn phòng ban --" value="" />
+        {departments.map(dep => (
+          <Picker.Item key={dep.id} label={dep.name} value={dep.id} />
         ))}
       </Picker>
 
-      <Text style={styles.label}>Nguyên vật liệu</Text>
-      <Picker
-        selectedValue={materialId}
-        onValueChange={setMaterialId}
-        style={styles.picker}
-      >
-        {materials.map((m) => (
-          <Picker.Item key={m.id} label={m.name} value={m.id} />
+      <Text style={styles.label}>Vật tư</Text>
+      <Picker selectedValue={materialId} onValueChange={setMaterialId} style={styles.input}>
+        <Picker.Item label="-- Chọn vật tư --" value="" />
+        {materials.map(mat => (
+          <Picker.Item key={mat.id} label={mat.name} value={mat.id} />
         ))}
+      </Picker>
+
+      <Text style={styles.label}>Đơn vị tính</Text>
+      <Picker selectedValue={unitId} onValueChange={setUnitId} style={styles.input}>
+        <Picker.Item label="-- Chọn đơn vị --" value="" />
+        {units.map(unit => (
+          <Picker.Item key={unit.id} label={unit.name} value={unit.id} />
+        ))}
+      </Picker>
+
+      <Text style={styles.label}>Loại yêu cầu</Text>
+      <Picker selectedValue={type} onValueChange={setType} style={styles.input}>
+        <Picker.Item label="Nhập kho" value="import" />
+        <Picker.Item label="Xuất kho" value="export" />
       </Picker>
 
       <Text style={styles.label}>Số lượng</Text>
       <TextInput
         style={styles.input}
+        keyboardType="numeric"
         value={quantity}
         onChangeText={setQuantity}
-        keyboardType="numeric"
         placeholder="Nhập số lượng"
       />
 
-      <TouchableOpacity style={styles.submit} onPress={submit}>
-        <Text style={styles.submitText}>Lưu yêu cầu</Text>
+      <Text style={styles.label}>Ngày</Text>
+      <TouchableOpacity style={styles.input} onPress={() => setShowDatePicker(true)}>
+        <Text>{date.toISOString().split('T')[0]}</Text>
+      </TouchableOpacity>
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={(_, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) setDate(selectedDate);
+          }}
+        />
+      )}
+
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Gửi yêu cầu</Text>
       </TouchableOpacity>
     </View>
   );
@@ -133,36 +148,23 @@ const RequestForm = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  label: { fontWeight: '600', marginBottom: 4, marginTop: 12 },
+  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#2e7d32' },
+  label: { fontWeight: '600', marginTop: 12, marginBottom: 4 },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 6,
     padding: 10,
-    fontSize: 14,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#f8f8f8',
   },
-  picker: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 6,
-    backgroundColor: '#f1f1f1',
-  },
-  submit: {
-    backgroundColor: '#1976d2',
+  button: {
+    marginTop: 24,
+    backgroundColor: '#388e3c',
     padding: 14,
     borderRadius: 8,
-    marginTop: 30,
     alignItems: 'center',
   },
-  submitText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 });
 
 export default RequestForm;

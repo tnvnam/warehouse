@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../AppNavigator';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -50,12 +52,51 @@ const sections = [
       { icon: 'person-outline', title: 'Người dùng', route: 'ListUser' },
       { icon: 'clipboard-outline', title: 'Kiểm kê kho', route: 'StockCheckList' },
       { icon: 'document-text-outline', title: 'Yêu cầu', route: 'RequestList' },
+      { icon: 'checkmark-done-outline', title: 'Duyệt yêu cầu', route: 'ApproveRequestList' },
     ],
   },
 ];
 
 const Dashboard = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [roleId, setRoleId] = useState<string | null>(null);
+
+  // Lấy roleId từ AsyncStorage
+  useFocusEffect(
+    useCallback(() => {
+      const loadRole = async () => {
+        const stored = await AsyncStorage.getItem('user');
+        if (stored) {
+          const user = JSON.parse(stored);
+          setRoleId(user.role_id);
+        }
+      };
+      loadRole();
+    }, [])
+  );
+
+  // Kiểm tra nếu là user
+  const isUser = roleId === '8b79a84f-436c-4dd8-9c6e-2266b94dc379'; // ID nhân viên
+
+  const filteredSections = isUser
+  ? [
+      {
+        title: 'Truy cập nhanh',
+        data: [
+          { icon: 'cube-outline', title: 'Tồn kho', route: 'InventoryList' },
+          { icon: 'swap-horizontal', title: 'Xuất/Nhập', route: 'StockMovement' },
+          { icon: 'bar-chart-outline', title: 'Báo cáo', route: 'InventoryReport' },
+        ],
+      },
+      {
+        title: 'Tác vụ của bạn',
+        data: [
+          { icon: 'document-text-outline', title: 'Yêu cầu', route: 'RequestList' },
+        ],
+      },
+    ]
+  : sections; // admin/quản lý vẫn xem toàn bộ
+
 
   const renderItem = ({ item }: any) => (
     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate(item.route)}>
@@ -79,7 +120,7 @@ const Dashboard = () => {
       </View>
 
       <SectionList
-        sections={sections}
+        sections={filteredSections}
         keyExtractor={(item) => item.route}
         renderItem={renderItem}
         renderSectionHeader={({ section: { title } }) => (
@@ -147,21 +188,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 10,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    elevation: 2,
+    borderRadius: 8,
+    shadowColor: '#ccc',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 3,
   },
-  cardIcon: {
-    marginRight: 12,
-  },
-  cardText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#222',
-  },
+  cardIcon: { marginRight: 12 },
+  cardText: { fontSize: 16, fontWeight: '500' },
 });
 
 export default Dashboard;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,22 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../AppNavigator'; // sửa đường dẫn nếu khác
+import { RootStackParamList } from '../AppNavigator';
 
 interface MovementItem {
   id: string;
   type: 'import' | 'export';
   product_name: string;
   warehouse_name: string;
-  quantity: string | number;
+  unit: string;
+  handler_name: string;
+  price: number | null;
+  batch_number: string;
+  note: string;
+  expiry_date: string;
+  quantity: number;
   date: string;
 }
 
@@ -31,7 +37,6 @@ const StockMovement = () => {
     try {
       const res = await fetch('http://10.0.2.2:3000/stock/movement');
       const result = await res.json();
-      console.log('Movement result:', result);
       setMovements(result);
     } catch (error) {
       console.error('Fetch error:', error);
@@ -41,9 +46,35 @@ const StockMovement = () => {
     }
   };
 
-  useEffect(() => {
-    fetchMovements();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchMovements();
+    }, [])
+  );
+
+  const deleteMovement = async (id: string) => {
+    Alert.alert('Xác nhận', 'Bạn có chắc muốn xóa phiếu này?', [
+      { text: 'Hủy' },
+      {
+        text: 'Xóa',
+        onPress: async () => {
+          try {
+            const res = await fetch(`http://10.0.2.2:3000/stock/delete/${id}`, {
+              method: 'DELETE',
+            });
+            if (res.ok) {
+              Alert.alert('Đã xóa');
+              fetchMovements();
+            } else {
+              throw new Error();
+            }
+          } catch (err) {
+            Alert.alert('Lỗi', 'Không thể xóa phiếu');
+          }
+        },
+      },
+    ]);
+  };
 
   const renderItem = ({ item }: { item: MovementItem }) => {
     const icon = item.type === 'import' ? 'arrow-down-circle-outline' : 'arrow-up-circle-outline';
@@ -55,9 +86,17 @@ const StockMovement = () => {
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{item.product_name}</Text>
           <Text style={styles.meta}>Kho: {item.warehouse_name}</Text>
-          <Text style={styles.meta}>Số lượng: {parseFloat(item.quantity as string)}</Text>
-          <Text style={styles.meta}>Ngày: {new Date(item.date).toLocaleDateString('vi-VN')}</Text>
+          <Text style={styles.meta}>Số lượng: {item.quantity} {item.unit}</Text>
+          <Text style={styles.meta}>Giá: {item.price ? `${item.price} đ` : '—'}</Text>
+          <Text style={styles.meta}>Người xử lý: {item.handler_name || '—'}</Text>
+          <Text style={styles.meta}>Số lô: {item.batch_number || '—'}</Text>
+          <Text style={styles.meta}>Hạn dùng: {item.expiry_date ? new Date(item.expiry_date).toLocaleDateString('vi-VN') : '—'}</Text>
+          <Text style={styles.meta}>Ghi chú: {item.note || '—'}</Text>
+          <Text style={styles.meta}>Ngày ghi nhận: {new Date(item.date).toLocaleDateString('vi-VN')}</Text>
         </View>
+        <TouchableOpacity onPress={() => deleteMovement(item.id)}>
+          <Ionicons name="trash-outline" size={20} color="#b00020" style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
       </View>
     );
   };
