@@ -27,7 +27,7 @@ app.get('/test-db', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -48,7 +48,7 @@ app.post('/roles', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -71,7 +71,7 @@ app.get('/roles', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -92,7 +92,7 @@ app.post('/departments', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -115,7 +115,7 @@ app.get('/departments', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -123,6 +123,30 @@ app.get('/departments', async (req, res) => {
     const result = await client.query('SELECT * FROM departments');
     await client.end();
     res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Lấy thông tin phòng ban theo ID
+app.get('/departments/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('SELECT * FROM departments WHERE id = $1', [id]);
+    await client.end();
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Không tìm thấy phòng ban' });
+    }
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -158,7 +182,7 @@ app.post('/users', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -188,7 +212,7 @@ app.get('/users', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -209,7 +233,7 @@ app.post('/product-categories', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -233,7 +257,7 @@ app.get('/product-categories', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -254,7 +278,7 @@ app.post('/units', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -277,7 +301,7 @@ app.get('/units', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -314,7 +338,7 @@ app.post('/suppliers', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -346,7 +370,7 @@ app.get('/suppliers', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -385,7 +409,7 @@ app.post('/products', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -417,12 +441,21 @@ app.get('/products', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
     await client.connect();
-    const result = await client.query('SELECT * FROM products');
+    const result = await client.query(`
+      SELECT 
+        p.*, 
+        c.name AS category_name, 
+        u.name AS unit_name
+      FROM products p
+      LEFT JOIN product_categories c ON p.category_id = c.id
+      LEFT JOIN units u ON p.unit_id = u.id
+      ORDER BY p.created_at DESC
+    `);
     await client.end();
     res.json(result.rows);
   } catch (err) {
@@ -446,7 +479,7 @@ app.post('/unit-conversions', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -474,7 +507,7 @@ app.get('/unit-conversions', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -513,7 +546,7 @@ app.post('/customers', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -545,7 +578,7 @@ app.get('/customers', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -576,7 +609,7 @@ app.post('/warehouses', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -604,7 +637,7 @@ app.get('/warehouses', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -641,7 +674,7 @@ app.post('/materials', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -673,7 +706,7 @@ app.get('/materials', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -708,7 +741,7 @@ app.post('/production-orders', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -740,7 +773,7 @@ app.get('/production-orders', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -770,7 +803,7 @@ app.post('/material-requests', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -800,7 +833,7 @@ app.get('/material-requests', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -830,7 +863,7 @@ app.post('/material-request-items', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -860,7 +893,7 @@ app.get('/material-request-items', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
   try {
@@ -882,7 +915,7 @@ app.get('/products/:id', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -918,7 +951,7 @@ app.get('/stockcheck', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -948,7 +981,7 @@ app.post('/stockcheck', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -979,7 +1012,7 @@ app.post('/requests', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -1009,7 +1042,7 @@ app.get('/requests', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -1037,7 +1070,7 @@ app.get('/inventory', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -1072,7 +1105,7 @@ app.get('/report', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -1216,7 +1249,7 @@ app.post('/login', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false
   });
 
@@ -1273,7 +1306,7 @@ app.put('/users/:id/password', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -1314,7 +1347,7 @@ app.put('/users/:id', async (req, res) => {
     port: 5432,
     database: 'warehouse',
     user: 'postgres',
-    password: '12345',
+    password: '514753',
     ssl: false,
   });
 
@@ -1331,5 +1364,105 @@ app.put('/users/:id', async (req, res) => {
   } catch (err) {
     console.error('Lỗi cập nhật thông tin:', err);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+});
+
+app.put('/departments/:id', async (req, res) => {
+  const { id } = req.params;
+  const { code, name, description, is_active } = req.body;
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    // Trả về bản ghi đã cập nhật
+    const result = await client.query(
+      `UPDATE departments
+       SET code = $1, name = $2, description = $3, is_active = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING *`, // Thêm RETURNING * để lấy bản ghi đã cập nhật
+      [code, name, description, is_active, id]
+    );
+    await client.end();
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy phòng ban để cập nhật' });
+    }
+    res.json(result.rows[0]); // Trả về phòng ban đã cập nhật
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Cập nhật vai trò theo ID
+app.put('/roles/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, description, status } = req.body; // permissions không cập nhật ở đây cho đơn giản
+
+  // Kiểm tra các trường bắt buộc
+  if (!name) {
+    return res.status(400).json({ success: false, error: 'Tên vai trò là bắt buộc.' });
+  }
+  if (status && !['active', 'inactive'].includes(status)) {
+    return res.status(400).json({ success: false, error: "Trạng thái không hợp lệ. Chỉ chấp nhận 'active' hoặc 'inactive'." });
+  }
+
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753', // Thay bằng mật khẩu của bạn
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+    const result = await client.query(
+      `UPDATE roles
+       SET name = $1, description = $2, status = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING *`, // Thêm RETURNING * để lấy bản ghi đã cập nhật
+      [name, description, status || 'active', id] // Nếu status không được cung cấp, mặc định là 'active'
+    );
+    await client.end();
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy vai trò để cập nhật' });
+    }
+
+    res.json(result.rows[0]); // Trả về vai trò đã được cập nhật
+  } catch (err) {
+    console.error('Lỗi cập nhật vai trò:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Xoá user theo ID
+app.delete('/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+    await client.end();
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy user để xoá' });
+    }
+    res.json({ success: true, deleted: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });

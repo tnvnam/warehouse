@@ -38,8 +38,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
   const fetchOptions = async () => {
     try {
-      const depRes = await fetch('http://192.168.1.4:3000/departments');
-      const roleRes = await fetch('http://192.168.1.4:3000/roles');
+      const depRes = await fetch('http://192.168.1.5:3000/departments');
+      const roleRes = await fetch('http://192.168.1.5:3000/roles');
       const deps = await depRes.json();
       const rolesData = await roleRes.json();
       setDepartments(deps);
@@ -60,7 +60,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
     try {
       setLoading(true);
-      const res = await fetch('http://192.168.1.4:3000/users', {
+      const res = await fetch('http://192.168.1.5:3000/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, is_active: true }),
