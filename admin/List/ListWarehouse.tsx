@@ -13,11 +13,35 @@ import { useNavigation } from '@react-navigation/native';
 
 interface Warehouse {
   id: string;
+  code: string;
   name: string;
-  location?: string;
-  type?: string; // nếu có loại kho: nội bộ, thuê ngoài, v.v.
-  status?: string; // nếu có trạng thái: hoạt động, tạm ngưng
+  parent_id?: string;
+  parent_name?: string;      // <-- Thêm trường này
+  address?: string;
+  manager_id?: string;
+  manager_name?: string;     // <-- Thêm trường này
+  note?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
+
+const formatDate = (date?: string) => {
+  if (!date) return '';
+  try {
+    return new Date(date).toLocaleDateString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+  } catch {
+    return date;
+  }
+};
+
+const renderStatusBadge = (isActive?: boolean) => (
+  <View style={[styles.badge, { backgroundColor: isActive ? '#43a047' : '#e53935' }]}>
+    <Text style={styles.badgeText}>{isActive ? 'Hoạt động' : 'Ngừng'}</Text>
+  </View>
+);
 
 const ListWarehouse = () => {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -68,31 +92,61 @@ const ListWarehouse = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>🏢 Danh sách kho</Text>
-
       <FlatList
         data={warehouses}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.item}>
+          <View style={styles.card}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text style={styles.detail}>
-                Vị trí: {item.location || 'Không rõ'}
-              </Text>
-              {item.type && (
-                <Text style={styles.detail}>Loại: {item.type}</Text>
+              <View style={styles.row}>
+                <Ionicons name="cube-outline" size={22} color="#388e3c" style={{ marginRight: 8 }} />
+                <Text style={styles.name}>{item.name}</Text>
+                {renderStatusBadge(item.is_active)}
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="barcode-outline" size={16} color="#888" />
+                <Text style={styles.infoText}>Mã kho: {item.code}</Text>
+              </View>
+              {item.parent_id && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="git-branch-outline" size={16} color="#888" />
+                  <Text style={styles.infoText}>Kho cha: {item.parent_name}</Text>
+                </View>
               )}
-              {item.status && (
-                <Text style={styles.detail}>Trạng thái: {item.status}</Text>
+              {item.manager_id && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="person-outline" size={16} color="#888" />
+                  <Text style={styles.infoText}>Quản lý: {item.manager_name}</Text>
+                </View>
               )}
+              {item.address && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="location-outline" size={16} color="#888" />
+                  <Text style={styles.infoText}>Địa chỉ: {item.address}</Text>
+                </View>
+              )}
+              {item.note && (
+                <View style={styles.infoRow}>
+                  <Ionicons name="document-text-outline" size={16} color="#888" />
+                  <Text style={styles.infoText}>Ghi chú: {item.note}</Text>
+                </View>
+              )}
+              <View style={styles.infoRow}>
+                <Ionicons name="calendar-outline" size={16} color="#888" />
+                <Text style={styles.infoText}>Tạo: {formatDate(item.created_at)}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="refresh-circle-outline" size={16} color="#888" />
+                <Text style={styles.infoText}>Cập nhật: {formatDate(item.updated_at)}</Text>
+              </View>
             </View>
-            <TouchableOpacity onPress={() => deleteWarehouse(item.id)}>
-              <Ionicons name="trash-outline" size={20} color="red" />
+            <TouchableOpacity onPress={() => deleteWarehouse(item.id)} style={styles.iconBtn}>
+              <Ionicons name="trash" size={20} color="#e53935" />
             </TouchableOpacity>
           </View>
         )}
+        ListEmptyComponent={<Text style={styles.emptyText}>Không có kho nào.</Text>}
       />
-
       <TouchableOpacity
         style={styles.addBtn}
         onPress={() => navigation.navigate('AddWarehouse' as never)}
@@ -107,17 +161,34 @@ const ListWarehouse = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f7fdfc' },
   header: { fontSize: 22, fontWeight: '700', color: '#2e7d32', marginBottom: 16 },
-  item: {
+  card: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: '#e8f5e9',
     padding: 14,
     borderRadius: 10,
     marginBottom: 12,
     elevation: 2,
   },
-  name: { fontSize: 16, fontWeight: '600', color: '#1b5e20', marginBottom: 4 },
-  detail: { fontSize: 13, color: '#555', marginBottom: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  name: { fontSize: 16, fontWeight: '600', color: '#1b5e20', flex: 1 },
+  badge: {
+    marginLeft: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  badgeText: { color: '#fff', fontWeight: 'bold', fontSize: 11 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  infoText: { color: '#555', fontSize: 13, marginLeft: 6 },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 20,
+    marginLeft: 8,
+    backgroundColor: '#f0f4fa',
+    alignSelf: 'flex-start',
+  },
   addBtn: {
     marginTop: 16,
     flexDirection: 'row',
@@ -128,6 +199,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addText: { color: '#fff', marginLeft: 6, fontWeight: '600', fontSize: 15 },
+  emptyText: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#6c757d' },
 });
 
 export default ListWarehouse;

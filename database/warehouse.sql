@@ -5,7 +5,11 @@
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.5
 
+<<<<<<< HEAD
 -- Started on 2025-05-23 04:32:46
+=======
+-- Started on 2025-05-23 02:47:35
+>>>>>>> 3a51a4147b3daff040c9beffbe77f5879c2ca23e
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -700,11 +704,14 @@ CREATE TABLE public.requests (
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     warehouse_id uuid,
     unit_id uuid,
+<<<<<<< HEAD
     handler_id uuid,
     price numeric(12,2),
     note text,
     batch_number character varying(50),
     expiry_date date,
+=======
+>>>>>>> 3a51a4147b3daff040c9beffbe77f5879c2ca23e
     CONSTRAINT requests_quantity_check CHECK ((quantity > (0)::numeric)),
     CONSTRAINT requests_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[]))),
     CONSTRAINT requests_type_check CHECK (((type)::text = ANY ((ARRAY['import'::character varying, 'export'::character varying])::text[])))
@@ -1079,11 +1086,24 @@ COPY public.purchase_requests (id, request_code, department_id, requester_id, cr
 -- Data for Name: requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
+<<<<<<< HEAD
 COPY public.requests (id, type, department_id, material_id, quantity, status, date, created_at, warehouse_id, unit_id, handler_id, price, note, batch_number, expiry_date) FROM stdin;
 9160e5c3-7b3a-43f4-890b-b67c09be5f61	export	b8d9e020-e688-40d9-91fd-eafe7e2e501d	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	rejected	2025-05-22	2025-05-23 03:12:12.751262	\N	ebba51b8-1c20-452b-afec-3ff5b0a454f3	\N	\N	\N	\N	\N
 7b9da628-c3d1-4cca-9278-e6f5f40e72dd	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	2.00	pending	2025-05-22	2025-05-23 03:41:32.800561	\N	d4f101da-e6f5-4a81-84b1-f94e0713113d	\N	\N	\N	\N	\N
 7e887745-df84-4090-b7fd-d1e7cce737c2	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	approved	2025-05-22	2025-05-23 03:07:08.936078	\N	d4f101da-e6f5-4a81-84b1-f94e0713113d	\N	\N	\N	\N	\N
 5e687d15-0c93-44ba-b449-0bfb4b117f55	import	\N	539a8b90-58fa-4640-8de8-c6a3f28962f4	2.00	approved	2025-05-22	2025-05-23 04:30:49.637813	f738d696-8451-4701-bc57-0866a9c30ec7	d4f101da-e6f5-4a81-84b1-f94e0713113d	af5cdd63-3078-4f5c-98b6-4c07e5fe3d34	3.00	A	2	2025-05-22
+=======
+COPY public.requests (id, type, department_id, material_id, quantity, status, date, created_at, warehouse_id, unit_id) FROM stdin;
+1dceff7e-de34-48e1-8110-026fde58e4d4	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	pending	2025-05-22	2025-05-22 21:44:22.751039	f738d696-8451-4701-bc57-0866a9c30ec7	\N
+1422a5f7-3eed-4da6-914c-75c8be3cefff	export	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	pending	2025-05-22	2025-05-22 21:45:59.645686	f738d696-8451-4701-bc57-0866a9c30ec7	\N
+e457e2b7-b4c4-4b27-a980-825c32e1e1e6	import	\N	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	approved	2025-05-22	2025-05-23 01:05:25.394694	f738d696-8451-4701-bc57-0866a9c30ec7	\N
+263ea078-f3ee-458e-ab15-b6bcae642c99	export	\N	539a8b90-58fa-4640-8de8-c6a3f28962f4	5.00	approved	2025-05-22	2025-05-23 01:06:31.025189	f738d696-8451-4701-bc57-0866a9c30ec7	\N
+66ca778c-6d08-4d48-936d-ab7d566b96ff	import	7dd8c930-4099-4bdb-ac24-2302a0a9a98a	539a8b90-58fa-4640-8de8-c6a3f28962f4	6.00	pending	2025-05-23	2025-05-23 01:29:52.601482	\N	\N
+2821f6e9-3a1f-4ddc-878b-5f18bf41349e	import	b8d9e020-e688-40d9-91fd-eafe7e2e501d	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	pending	2025-05-23	2025-05-23 01:31:27.217296	\N	\N
+1284127a-860c-4da4-ac59-b0412576bb1a	import	b8d9e020-e688-40d9-91fd-eafe7e2e501d	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	pending	2025-05-23	2025-05-23 01:45:05.528684	\N	\N
+5deb4b5f-1562-4975-93cb-a51e36eb7ff9	export	b8d9e020-e688-40d9-91fd-eafe7e2e501d	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	pending	2025-05-23	2025-05-23 01:45:44.726927	\N	\N
+c76cd47e-f4f2-4cab-812e-d3b54b29976c	import	b8d9e020-e688-40d9-91fd-eafe7e2e501d	539a8b90-58fa-4640-8de8-c6a3f28962f4	3.00	pending	2025-05-22	2025-05-23 01:56:34.410428	\N	d4f101da-e6f5-4a81-84b1-f94e0713113d
+>>>>>>> 3a51a4147b3daff040c9beffbe77f5879c2ca23e
 \.
 
 
@@ -2065,7 +2085,11 @@ ALTER TABLE ONLY public.warehouses
     ADD CONSTRAINT warehouses_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.warehouses(id) ON DELETE SET NULL;
 
 
+<<<<<<< HEAD
 -- Completed on 2025-05-23 04:32:46
+=======
+-- Completed on 2025-05-23 02:47:36
+>>>>>>> 3a51a4147b3daff040c9beffbe77f5879c2ca23e
 
 --
 -- PostgreSQL database dump complete

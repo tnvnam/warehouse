@@ -7,6 +7,8 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
@@ -21,9 +23,17 @@ interface Customer {
   priority_level?: number;
 }
 
+const renderPriority = (level?: number) => {
+  if (level === 1) return <Text style={[styles.priority, { backgroundColor: '#e53935' }]}>Cao</Text>;
+  if (level === 2) return <Text style={[styles.priority, { backgroundColor: '#ffb300' }]}>Trung bình</Text>;
+  return <Text style={[styles.priority, { backgroundColor: '#43a047' }]}>Bình thường</Text>;
+};
+
 const ListCustomer = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
 
   const fetchCustomers = async () => {
@@ -59,44 +69,55 @@ const ListCustomer = () => {
     ]);
   };
 
-  const renderPriority = (level?: number) => {
-    if (level === 1) return 'Cao';
-    if (level === 2) return 'Trung bình';
-    return 'Bình thường';
-  };
-
   useEffect(() => {
     fetchCustomers();
   }, []);
 
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 100 }} />;
 
+  const openDetailModal = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setModalVisible(true);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>📋 Danh sách khách hàng</Text>
-
+      <Text style={styles.header}>👥 Danh sách khách hàng</Text>
       <FlatList
         data={customers}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.item}>
+          <TouchableOpacity style={styles.card} onPress={() => openDetailModal(item)}>
+            <Ionicons name="people-circle-outline" size={32} color="#1976d2" style={{ marginRight: 14 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{item.company_name}</Text>
-              <Text style={styles.detail}>
-                Liên hệ: {item.contact_person || '—'} | SĐT: {item.phone}
-              </Text>
-              <Text style={styles.detail}>
-                Email: {item.email || '—'} | Ưu tiên: {renderPriority(item.priority_level)}
-              </Text>
-              <Text style={styles.detail}>
-                Địa chỉ: {item.address || '—'}
-              </Text>
+              <View style={styles.infoRow}>
+                <Ionicons name="person-outline" size={15} color="#888" />
+                <Text style={styles.infoText}>Liên hệ: {item.contact_person || '—'}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="call-outline" size={15} color="#888" />
+                <Text style={styles.infoText}>SĐT: {item.phone}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="mail-outline" size={15} color="#888" />
+                <Text style={styles.infoText}>Email: {item.email || '—'}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="location-outline" size={15} color="#888" />
+                <Text style={styles.infoText}>Địa chỉ: {item.address || '—'}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="star-outline" size={15} color="#888" />
+                <Text style={styles.infoText}>Ưu tiên: {renderPriority(item.priority_level)}</Text>
+              </View>
             </View>
-            <TouchableOpacity onPress={() => deleteCustomer(item.id)}>
-              <Ionicons name="trash" size={20} color="red" />
+            <TouchableOpacity onPress={() => deleteCustomer(item.id)} style={styles.iconBtn}>
+              <Ionicons name="trash-outline" size={20} color="#dc3545" />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         )}
+        ListEmptyComponent={<Text style={styles.emptyText}>Không có khách hàng nào.</Text>}
       />
 
       <TouchableOpacity
@@ -106,34 +127,156 @@ const ListCustomer = () => {
         <Ionicons name="add" size={24} color="#fff" />
         <Text style={styles.addText}>Thêm khách hàng</Text>
       </TouchableOpacity>
+
+      {/* Modal chi tiết khách hàng */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setModalVisible(false)}
+            >
+              <Ionicons name="close-circle" size={28} color="#888" />
+            </TouchableOpacity>
+            <ScrollView>
+              {selectedCustomer && (
+                <>
+                  <Text style={styles.modalTitle}>{selectedCustomer.company_name}</Text>
+                  <View style={styles.detailBox}>
+                    <DetailRow icon="person-outline" label="Người liên hệ" value={selectedCustomer.contact_person} />
+                    <DetailRow icon="call-outline" label="SĐT" value={selectedCustomer.phone} />
+                    <DetailRow icon="mail-outline" label="Email" value={selectedCustomer.email} />
+                    <DetailRow icon="location-outline" label="Địa chỉ" value={selectedCustomer.address} />
+                    <DetailRow icon="star-outline" label="Ưu tiên" value={renderPriority(selectedCustomer.priority_level)} />
+                  </View>
+                </>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
 
+const DetailRow = ({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value?: React.ReactNode;
+}) => (
+  <View style={styles.detailRow}>
+    <Ionicons name={icon} size={18} color="#1976d2" style={{ width: 26 }} />
+    <Text style={styles.detailLabel}>{label}:</Text>
+    <Text style={styles.detailValue}>{value ? value : '—'}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  item: {
+  container: { flex: 1, padding: 16, backgroundColor: '#f7fafd' },
+  header: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, color: '#1976d2' },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f1f1',
+    backgroundColor: '#e3f2fd',
     padding: 14,
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: 10,
+    marginBottom: 10,
     elevation: 2,
   },
-  name: { fontWeight: '700', fontSize: 16, marginBottom: 4, color: '#2e7d32' },
-  detail: { color: '#555', fontSize: 13, marginBottom: 2 },
+  name: { fontWeight: 'bold', fontSize: 16, color: '#222', marginBottom: 2 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  infoText: { color: '#555', fontSize: 13, marginLeft: 6 },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 20,
+    marginLeft: 8,
+    backgroundColor: '#f0f4fa',
+    alignSelf: 'flex-start',
+  },
   addBtn: {
     marginTop: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 6,
-    backgroundColor: '#007bff',
+    paddingVertical: 14,
+    borderRadius: 25,
+    backgroundColor: '#1976d2',
+    elevation: 2,
   },
-  addText: { color: '#fff', marginLeft: 6, fontWeight: '600', fontSize: 15 },
+  addText: { color: '#fff', marginLeft: 10, fontWeight: 'bold', fontSize: 16 },
+  emptyText: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#6c757d' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '92%',
+    maxHeight: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 22,
+    elevation: 8,
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 1,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  detailBox: {
+    backgroundColor: '#f6fafd',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 0.7,
+    borderBottomColor: '#e0e6ed',
+    paddingVertical: 7,
+    marginHorizontal: 2,
+  },
+  detailLabel: {
+    minWidth: 110,
+    color: '#444',
+    fontWeight: '500',
+    fontSize: 15,
+  },
+  detailValue: {
+    color: '#222',
+    fontSize: 15,
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  priority: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginLeft: 4,
+  },
 });
 
 export default ListCustomer;
