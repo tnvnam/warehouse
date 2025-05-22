@@ -711,7 +711,18 @@ app.get('/materials', async (req, res) => {
   });
   try {
     await client.connect();
-    const result = await client.query('SELECT * FROM materials');
+    const result = await client.query(`
+      SELECT 
+        m.*, 
+        c.name AS category_name, 
+        u.name AS unit_name, 
+        s.name AS supplier_name
+      FROM materials m
+      LEFT JOIN product_categories c ON m.category_id = c.id
+      LEFT JOIN units u ON m.unit_id = u.id
+      LEFT JOIN suppliers s ON m.supplier_id = s.id
+      ORDER BY m.created_at DESC
+    `);
     await client.end();
     res.json(result.rows);
   } catch (err) {
@@ -1462,6 +1473,37 @@ app.delete('/users/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Không tìm thấy user để xoá' });
     }
     res.json({ success: true, deleted: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Cập nhật danh mục sản phẩm theo ID
+app.put('/product-categories/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, description, is_active } = req.body;
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '514753',
+    ssl: false
+  });
+  try {
+    await client.connect();
+    const result = await client.query(
+      `UPDATE product_categories
+       SET name = $1, description = $2, is_active = COALESCE($3, is_active), updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING *`,
+      [name, description, is_active, id]
+    );
+    await client.end();
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy danh mục để cập nhật' });
+    }
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

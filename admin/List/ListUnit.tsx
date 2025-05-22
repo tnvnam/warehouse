@@ -63,21 +63,27 @@ const ListUnit = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Danh sách đơn vị tính</Text>
+      <Text style={styles.header}>⚖️ Danh sách đơn vị tính</Text>
       <FlatList
         data={units}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.item}>
+          <View style={styles.card}>
+            <Ionicons name="cube-outline" size={26} color="#1976d2" style={{ marginRight: 14 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{item.name}</Text>
+              <View style={styles.infoRow}>
+                <Ionicons name="barcode-outline" size={15} color="#888" />
+                <Text style={styles.infoText}>Mã: {item.code}</Text>
+              </View>
               <Text style={styles.desc}>{item.description || 'Không mô tả'}</Text>
             </View>
-            <TouchableOpacity onPress={() => deleteUnit(item.id)}>
-              <Ionicons name="trash" size={20} color="red" />
+            <TouchableOpacity onPress={() => deleteUnit(item.id)} style={styles.iconBtn}>
+              <Ionicons name="trash-outline" size={20} color="#dc3545" />
             </TouchableOpacity>
           </View>
         )}
+        ListEmptyComponent={<Text style={styles.emptyText}>Không có đơn vị nào.</Text>}
       />
       <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddUnit' as never)}>
         <Ionicons name="add" size={24} color="#fff" />
@@ -88,28 +94,48 @@ const ListUnit = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  item: {
+  container: { flex: 1, padding: 16, backgroundColor: '#f7fafd' },
+  header: { fontSize: 22, fontWeight: 'bold', marginBottom: 16, color: '#1976d2' },
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f1f1',
-    padding: 12,
-    borderRadius: 6,
+    backgroundColor: '#e3f2fd',
+    padding: 14,
+    borderRadius: 10,
     marginBottom: 10,
+    elevation: 2,
   },
-  name: { fontWeight: '600', fontSize: 16 },
+  name: { fontWeight: 'bold', fontSize: 16, color: '#222', marginBottom: 2 },
   desc: { color: '#555', fontSize: 13 },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  infoText: {
+    color: '#555',
+    fontSize: 13,
+    marginLeft: 4,
+  },
+  iconBtn: {
+    padding: 8,
+    borderRadius: 20,
+    marginLeft: 8,
+    backgroundColor: '#f0f4fa',
+    alignSelf: 'flex-start',
+  },
   addBtn: {
     marginTop: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 6,
-    backgroundColor: '#007bff',
+    paddingVertical: 14,
+    borderRadius: 25,
+    backgroundColor: '#1976d2',
+    elevation: 2,
   },
-  addText: { color: '#fff', marginLeft: 6, fontWeight: '600' },
+  addText: { color: '#fff', marginLeft: 10, fontWeight: 'bold', fontSize: 16 },
+  emptyText: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#6c757d' },
 });
 
 export default ListUnit;
