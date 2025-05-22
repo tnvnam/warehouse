@@ -37,18 +37,18 @@ import RequestDetail from './Request/RequestDetail';
 
 import ProductDetail from './Detail/ProductDetail';
 
-// 💡 Thêm các màn hình kiểm kê
 import StockCheckList from './warehouse/StockCheckList';
 import StockCheckForm from './warehouse/StockCheckForm';
+import StockMovement from './warehouse/StockMovement';
+import StockForm from './warehouse/StockForm';
 
 export type RootStackParamList = {
-  Login: undefined;
+  Login: { username?: string } | undefined;
   Register: undefined;
   MainTabs: undefined;
   ChangePassword: undefined;
   UserProfile: undefined;
 
-  // Add
   AddUser: undefined;
   AddRole: undefined;
   AddDepartment: undefined;
@@ -60,7 +60,6 @@ export type RootStackParamList = {
   AddSupplier: undefined;
   AddWarehouse: undefined;
 
-  // List
   ListUser: undefined;
   ListRole: undefined;
   ListDepartment: undefined;
@@ -72,17 +71,16 @@ export type RootStackParamList = {
   ListSupplier: undefined;
   ListWarehouse: undefined;
 
-  // Detail
   ProductDetail: { id: string };
 
-  // Request
   RequestList: undefined;
   RequestForm: undefined;
   RequestDetail: { id: string };
 
-  // 🆕 Stock Check
   StockCheckList: undefined;
   StockCheckForm: undefined;
+  StockMovement: undefined;
+  StockForm: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -130,9 +128,11 @@ const AppNavigator = () => {
         <Stack.Screen name="RequestForm" component={RequestForm} />
         <Stack.Screen name="RequestDetail" component={RequestDetail} />
 
-        {/* Stock Check */}
+        {/* Stock */}
         <Stack.Screen name="StockCheckList" component={StockCheckList} />
         <Stack.Screen name="StockCheckForm" component={StockCheckForm} />
+        <Stack.Screen name="StockMovement" component={StockMovement} />
+        <Stack.Screen name="StockForm" component={StockForm} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -6,19 +6,24 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../AppNavigator'; // sửa đường dẫn nếu khác
 
 interface MovementItem {
-  id: number;
+  id: string;
   type: 'import' | 'export';
   product_name: string;
   warehouse_name: string;
-  quantity: number;
+  quantity: string | number;
   date: string;
 }
 
 const StockMovement = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [movements, setMovements] = useState<MovementItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -26,6 +31,7 @@ const StockMovement = () => {
     try {
       const res = await fetch('http://10.0.2.2:3000/stock/movement');
       const result = await res.json();
+      console.log('Movement result:', result);
       setMovements(result);
     } catch (error) {
       console.error('Fetch error:', error);
@@ -49,8 +55,8 @@ const StockMovement = () => {
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{item.product_name}</Text>
           <Text style={styles.meta}>Kho: {item.warehouse_name}</Text>
-          <Text style={styles.meta}>Số lượng: {item.quantity}</Text>
-          <Text style={styles.meta}>Ngày: {item.date}</Text>
+          <Text style={styles.meta}>Số lượng: {parseFloat(item.quantity as string)}</Text>
+          <Text style={styles.meta}>Ngày: {new Date(item.date).toLocaleDateString('vi-VN')}</Text>
         </View>
       </View>
     );
@@ -60,30 +66,49 @@ const StockMovement = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Lịch sử xuất/nhập kho</Text>
-      <FlatList
-        data={movements}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-      />
+      <Text style={styles.header}>📦 Lịch sử xuất/nhập kho</Text>
+
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('StockForm')}>
+        <Text style={styles.buttonText}>➕ Tạo phiếu mới</Text>
+      </TouchableOpacity>
+
+      {movements.length === 0 ? (
+        <Text style={styles.empty}>Không có dữ liệu.</Text>
+      ) : (
+        <FlatList
+          data={movements}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingBottom: 80 }}
+        />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', padding: 16 },
-  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  header: { fontSize: 20, fontWeight: 'bold', marginBottom: 12, color: '#2e7d32' },
   item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#f1f8e9',
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
   },
   icon: { marginRight: 12, marginTop: 4 },
-  title: { fontWeight: '600', fontSize: 16 },
-  meta: { color: '#555', fontSize: 13 },
+  title: { fontWeight: '600', fontSize: 16, color: '#33691e' },
+  meta: { color: '#444', fontSize: 13 },
+  empty: { textAlign: 'center', marginTop: 50, fontSize: 16, color: '#999' },
+  button: {
+    marginBottom: 16,
+    backgroundColor: '#1976d2',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: { color: '#fff', fontWeight: '600' },
 });
 
 export default StockMovement;

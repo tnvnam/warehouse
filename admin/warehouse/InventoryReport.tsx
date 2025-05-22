@@ -69,45 +69,59 @@ const InventoryReport = () => {
     }
   };
 
-  const requestWritePermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        {
-          title: 'Cấp quyền lưu file',
-          message: 'Ứng dụng cần quyền để lưu file Excel',
-          buttonNeutral: 'Hỏi lại sau',
-          buttonNegative: 'Hủy',
-          buttonPositive: 'Đồng ý',
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    }
-    return true;
-  };
+ const requestWritePermission = async () => {
+  if (Platform.OS === 'android') {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+      {
+        title: 'Yêu cầu quyền ghi file',
+        message: 'Ứng dụng cần quyền để lưu báo cáo Excel',
+        buttonPositive: 'Đồng ý',
+      }
+    );
+    return granted === PermissionsAndroid.RESULTS.GRANTED;
+  }
+  return true;
+};
 
   const exportToExcel = async () => {
-    const granted = await requestWritePermission();
-    if (!granted) {
-      Alert.alert('Lỗi', 'Bạn chưa cấp quyền lưu file');
+  const granted = await requestWritePermission();
+if (!granted) {
+  Alert.alert('Chưa cấp quyền', 'Bạn cần cho phép ghi bộ nhớ để xuất Excel');
+  return;
+}
+
+  try {
+    if (!reportData.length) {
+      Alert.alert('Không có dữ liệu để xuất');
       return;
     }
 
-    try {
-      const worksheet = XLSX.utils.json_to_sheet(reportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Báo cáo');
+    // Chuyển dữ liệu sang Excel
+    const worksheet = XLSX.utils.json_to_sheet(reportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'BaoCaoTonKho');
 
-      const wbout = XLSX.write(workbook, { type: 'binary', bookType: 'xlsx' });
-      const path = `${RNFS.DownloadDirectoryPath}/baocao-tonkho.xlsx`;
+    const wbout = XLSX.write(workbook, { type: 'binary', bookType: 'xlsx' });
 
-      await RNFS.writeFile(path, wbout, 'ascii');
-      Alert.alert('✅ Thành công', `Đã lưu: ${path}`);
-    } catch (error) {
-      console.error('Lỗi ghi file Excel:', error);
-      Alert.alert('❌ Không thể xuất Excel');
-    }
-  };
+    const path = `${RNFS.DocumentDirectoryPath}/baocao-tonkho.xlsx`;
+
+    // Hàm chuyển string → binary
+    const s2ab = (s: string) => {
+      const buf = new ArrayBuffer(s.length);
+      const view = new Uint8Array(buf);
+      for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xff;
+      return buf;
+    };
+
+    await RNFS.writeFile(path, wbout, 'ascii');
+
+    Alert.alert('✅ Xuất Excel thành công', `File đã lưu tại:\n${path}`);
+  } catch (err) {
+    console.error('Export error:', err);
+    Alert.alert('❌ Lỗi', 'Không thể xuất Excel');
+  }
+};
 
   useEffect(() => {
     fetchDepartments();

@@ -1124,6 +1124,76 @@ app.get('/report', async (req, res) => {
 });
 
 
+// Trong connect.js
+app.get('/stock/movement', async (req, res) => {
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '12345',
+  });
+
+  try {
+    await client.connect();
+
+    const result = await client.query(`
+      SELECT 
+        r.id,
+        r.type,
+        m.name AS product_name,
+        w.name AS warehouse_name,
+        r.quantity,
+        r.date
+      FROM requests r
+      JOIN materials m ON r.material_id = m.id
+      JOIN warehouses w ON r.warehouse_id = w.id
+      WHERE r.status = 'approved'
+      ORDER BY r.date DESC
+    `);
+
+    await client.end();
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Lỗi stock/movement:', err);
+    res.status(500).json({ error: 'Không thể tải dữ liệu xuất/nhập kho' });
+  }
+});
+
+module.exports = app;
+
+app.post('/stock/create', async (req, res) => {
+  const { material_id, warehouse_id, type, quantity, date } = req.body;
+
+  if (!material_id || !warehouse_id || !type || !quantity || !date) {
+    return res.status(400).json({ error: 'Thiếu dữ liệu' });
+  }
+
+  const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'warehouse',
+    user: 'postgres',
+    password: '12345',
+    ssl: false
+  });
+
+  try {
+    await client.connect();
+
+    await client.query(
+      `INSERT INTO requests (id, material_id, warehouse_id, type, quantity, date, status, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, 'approved', NOW())`,
+      [material_id, warehouse_id, type, quantity, date]
+    );
+
+    await client.end();
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Lỗi tạo phiếu:', error);
+    res.status(500).json({ error: 'Không thể tạo phiếu' });
+  }
+});
 
 
 
