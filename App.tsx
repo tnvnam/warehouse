@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { ScrollView, StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import AddProductionOrder from './admin/AddProductionOrder';
+import AppNavigator from './admin/AppNavigator';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -32,7 +32,7 @@ function App(): React.JSX.Element {
             flex: 1,
             justifyContent: 'center',
           }}>
-          <AddProductionOrder />
+          <AppNavigator />
         </View>
       </ScrollView>
     </View>
