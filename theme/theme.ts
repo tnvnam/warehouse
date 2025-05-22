@@ -6,6 +6,8 @@ const COLORS = {
   gray: '#ccc',
   text: '#333',
   danger: '#dc3545',
+  grayLight: '#f5f5f5'
 };
+
 
 export default COLORS;

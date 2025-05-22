@@ -32,6 +32,20 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
     }
   }, [route.params]);
 
+  const getPermissionsByRole = (roleId: string) => {
+    switch (roleId) {
+      case '148fa076-70da-40c0-9c83-4ea2004b39cb': // Admin
+        return ['view', 'edit', 'delete', 'add'];
+      case '1ef47567-49f8-41ed-8d22-138d5ae68ccd': // Manager
+        return ['view', 'edit', 'add'];
+      case '8b79a84f-436c-4dd8-9c6e-2266b94dc379': // Employee
+        return ['add', 'view'];
+      case '3af49502-a14f-4e95-ba8f-c41975ebcdb6': // Guest
+      default:
+        return ['view'];
+    }
+  };
+
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
@@ -40,7 +54,7 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
 
     try {
       setLoading(true);
-      const response = await fetch('http://192.168.1.138:3000/login', {
+      const response = await fetch('http://192.168.1.4:3000/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -50,25 +64,11 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
       setLoading(false);
 
       if (response.ok) {
-        await AsyncStorage.setItem('user', JSON.stringify(data.user));
+        const permissions = getPermissionsByRole(data.user.role_id);
+        const fullUser = { ...data.user, permissions };
+        await AsyncStorage.setItem('user', JSON.stringify(fullUser));
         Alert.alert('✅ Thành công', 'Đăng nhập thành công!');
-
-        const roleId = data.user.role_id;
-        switch (roleId) {
-          case '148fa076-70da-40c0-9c83-4ea2004b39cb':
-            navigation.navigate('AdminDashboard');
-            break;
-          case '1ef47567-49f8-41ed-8d22-138d5ae68ccd':
-            navigation.navigate('ManagerDashboard');
-            break;
-          case '8b79a84f-436c-4dd8-9c6e-2266b94dc379':
-            navigation.navigate('EmployeeDashboard');
-            break;
-          case '3af49502-a14f-4e95-ba8f-c41975ebcdb6':
-          default:
-            navigation.navigate('GuestDashboard');
-            break;
-        }
+        navigation.navigate('MainTabs');
       } else {
         Alert.alert('Lỗi', data.error || 'Đăng nhập thất bại');
       }
@@ -118,7 +118,9 @@ const LoginScreen: React.FC<Props> = ({ navigation, route }) => {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.registerLink}>Bạn chưa có tài khoản? <Text style={{ fontWeight: '600' }}>Đăng ký</Text></Text>
+        <Text style={styles.registerLink}>
+          Bạn chưa có tài khoản? <Text style={{ fontWeight: '600' }}>Đăng ký</Text>
+        </Text>
       </TouchableOpacity>
     </View>
   );
